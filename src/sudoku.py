@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Tuple
 
 import numpy as np
 
@@ -32,8 +31,6 @@ class SudokuGrid:
 
     def get_square(self, starting_row: int, starting_col: int) -> np.ndarray:
         return self.grid[starting_row:starting_row+3, starting_col:starting_col+3]
-
-    def is_valid(self) -> bool:
 
 
 @dataclass(frozen=True)
