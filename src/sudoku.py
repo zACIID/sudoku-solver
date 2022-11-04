@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Set
 from dataclasses import dataclass
+from typing import Dict
 
 import numpy as np
-
-EMPTY_CELL_VALUE = -777
 
 
 class SudokuGrid:
@@ -13,24 +13,48 @@ class SudokuGrid:
     9x9 Sudoku grid
     """
 
-    empty_cell_value: int
+    empty_cell_marker: int
     """
     Value used to mark empty cells in the Sudoku grid
     """
 
-    def __init__(self, starting_grid: np.ndarray = None, empty_cell_value: int = EMPTY_CELL_VALUE):
+    cell_domains: Dict[CellCoordinates, Set[int]]
+    """
+    Dictionary that pairs each cell coordinate with its domain, which consists
+    in the set of 1 to 9 integers that can be assigned to that cell without
+    violating any constraint
+    """
+
+    def __init__(self, starting_grid: np.ndarray = None, empty_cell_marker: int = -777):
         """
         :param starting_grid: starting sudoku grid.
             Empty cells must be marked with the provided value.
-        :param empty_cell_value: value that empty cells are marked with. Must be a number
+        :param empty_cell_marker: value that empty cells are marked with. Must be a number
             out of the 1 to 9 integer interval (which is that of valid sudoku numbers)
         """
 
         assert starting_grid.shape[0] == 9 and starting_grid.shape[1] == 9, "Provided sudoku grid is not 9x9"
-        assert empty_cell_value not in [1, 2, 3, 4, 5, 6, 7, 8, 9], \
+        assert empty_cell_marker not in [1, 2, 3, 4, 5, 6, 7, 8, 9], \
             "Empty cells cannot be marked with integers from 1 to 9"
 
-        self.grid = np.full((9, 9), empty_cell_value) if starting_grid is None else starting_grid
+        self.grid = np.full((9, 9), empty_cell_marker) if starting_grid is None else starting_grid
+
+        # Initialize cell domains by scanning the board and accounting
+        # for starting non-empty cells
+        self.cell_domains = {}
+        maximum_domain = set(range(1, 9+1))  # TODO add empty cell to domain?
+        for row in range(0, 8+1):
+            row_domain = set(self.get_row(i=row))
+
+            for col in range(0, 8+1):
+                current_cell = CellCoordinates(row=row, col=col)
+
+                col_domain = set(self.get_column(i=col))
+                square_domain = set(self.get_square(cell=current_cell))
+
+                # Cell domain = maximum possible domain - union(row, col, square)
+                cell_domain = maximum_domain.difference(set.union(row_domain, col_domain, square_domain))
+                self.cell_domains[current_cell] = cell_domain
 
     def get_value(self, cell: CellCoordinates) -> int:
         return self.grid[cell.row, cell.col]
@@ -48,26 +72,62 @@ class SudokuGrid:
             otherwise an exception is raised
         """
 
-        assert val in [1, 2, 3, 4, 5, 6, 7, 8, 9, self.empty_cell_value], "Provided value is not valid"
+        assert val in [1, 2, 3, 4, 5, 6, 7, 8, 9, self.empty_cell_marker], "Provided value is not valid"
+
+        # TODO assert if in domain (manually include empty cell?)
 
         if only_if_empty:
-            if self.grid[cell.row, cell.col] != self.empty_cell_value:
+            if self.grid[cell.row, cell.col] != self.empty_cell_marker:
                 raise ValueError(f"Cannot set a value to a non-empty cell: {cell}")
+
+        # TODO update domains of rows, cols and squares
+        #   if value != empty: remove value from domains
+        #   if value == empty: add value to domains
+        # TODO function set_empty?
 
         self.grid[cell.row, cell.col] = val
 
     def get_row(self, i: int) -> np.ndarray:
+        """
+        Returns the sudoku row with the provided index
+        :param i: index of the row, 0 based
+        :return: row at the specified index
+        """
+
+        assert 0 <= i <= 8, "Index out of range"
+
         return self.grid[i, :]
 
     def get_column(self, i: int) -> np.ndarray:
+        """
+        Returns the sudoku column with the provided index
+        :param i: index of the column, 0 based
+        :return: column at the specified index
+        """
+
+        assert 0 <= i <= 8, "Index out of range"
+
         return self.grid[:, i]
 
-    def get_square(self, starting_row: int, starting_col: int) -> np.ndarray:
+    def get_square(self, cell: CellCoordinates) -> np.ndarray:
+        """
+        Returns the sudoku square that the specified cell belongs to.
+        Such a square refers to the 9 squares characteristic of a sudoku grid,
+        in which there can't be repetitions of numbers from 1 to 9.
+
+        :param cell: cell to return the sudoku square of
+        :return: sudoku square that the cell belongs to
+        """
+
+        # Square starting indexes, for both rows and cols, are either 0, 3 or 6
+        starting_row = (cell.row // 3) * 3
+        starting_col = (cell.col // 3) * 3
+
         return self.grid[starting_row:starting_row + 3, starting_col:starting_col + 3]
 
     def is_full(self) -> bool:
         # Full when there are no more empty cells
-        return self.empty_cell_value not in self.grid
+        return self.empty_cell_marker not in self.grid
 
 
 @dataclass(frozen=True)

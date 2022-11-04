@@ -15,19 +15,18 @@ from sudoku import SudokuGrid, CellCoordinates
 
 def sudoku_solver(sudoku: SudokuGrid) -> SudokuGrid:
     """
-    Solves the provided sudoku with a Recursive Back-tracking approach.
+    Solves the provided sudoku with the Back-tracking + Constraint Propagation approach.
     Returns the solved sudoku grid.
 
-    :param sudoku:
-    :param starting_cell:
-    :return:
+    :param sudoku: sudoku grid to solve
+    :return: solved sudoku grid
     """
 
     def solver_aux(grid: SudokuGrid, current_cell: CellCoordinates) -> Tuple[bool, SudokuGrid]:
         next_cell = current_cell.get_next()
 
         # If current cell is filled, go to next
-        if sudoku.get_value(cell=current_cell) != sudoku.empty_cell_value:
+        if sudoku.get_value(cell=current_cell) != sudoku.empty_cell_marker:
             if next_cell is None:
                 return cn.is_solution_correct(sudoku), sudoku
 
@@ -48,7 +47,7 @@ def sudoku_solver(sudoku: SudokuGrid) -> SudokuGrid:
                 return True, solution
 
         # If no solution found at current cell, set as empty again and go back
-        sudoku.set_value(cell=current_cell, val=sudoku.empty_cell_value)
+        sudoku.set_value(cell=current_cell, val=sudoku.empty_cell_marker)
         return False, sudoku
 
     # Pass copy to avoid side effects

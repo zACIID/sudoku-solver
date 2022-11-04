@@ -38,7 +38,7 @@ def is_grid_valid(grid: sud.SudokuGrid) -> bool:
     for i in range(0, 8+1, 3):
         for j in range(0, 8+1, 3):
             if not check_no_repetitions(grid.get_square(
-                starting_row=i, starting_col=j
+                cell=sud.CellCoordinates(row=i, col=j)
             )):
                 return False
 

@@ -61,7 +61,7 @@ def sudoku_grid(request) -> SudokuGrid:
     """
     return SudokuGrid(
         starting_grid=request.param,
-        empty_cell_value=EMPTY_CELL
+        empty_cell_marker=EMPTY_CELL
     )
 
 
@@ -81,7 +81,7 @@ def solved_sudoku() -> SudokuGrid:
 
     return SudokuGrid(
         starting_grid=solved_grid,
-        empty_cell_value=EMPTY_CELL
+        empty_cell_marker=EMPTY_CELL
     )
 
 
