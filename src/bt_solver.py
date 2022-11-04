@@ -7,14 +7,14 @@ from typing import Tuple
 
 import numpy as np
 
-import model as mod
 import constraints as cn
+from sudoku import SudokuGrid, CellCoordinates
 
 
 # TODO metodo per non settare celle originali (controllare se all'inizio sono settate con EMPTY_VALUE?)
 
 
-def sudoku_solver(sudoku: mod.SudokuGrid, starting_cell: mod.SudokuCell) -> mod.SudokuGrid:
+def sudoku_solver(sudoku: SudokuGrid, starting_cell: CellCoordinates) -> SudokuGrid:
     """
 
     :param sudoku:

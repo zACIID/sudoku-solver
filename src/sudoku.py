@@ -22,10 +22,10 @@ class SudokuGrid:
 
         self.grid = np.full((9, 9), empty_cell_value) if starting_grid is None else starting_grid
 
-    def get_value(self, cell: SudokuCell) -> int:
+    def get_value(self, cell: CellCoordinates) -> int:
         return self.grid[cell.row, cell.col]
 
-    def set_value(self, cell: SudokuCell, val: int):
+    def set_value(self, cell: CellCoordinates, val: int):
         assert val in [1, 2, 3, 4, 5, 6, 7, 8, 9, EMPTY_CELL_VALUE], "Provided value is not valid"
 
         self.grid[cell.row, cell.col] = val
@@ -45,11 +45,11 @@ class SudokuGrid:
 
 
 @dataclass(frozen=True)
-class SudokuCell:  # TODO cell coordinates?
+class CellCoordinates:  # TODO cell coordinates?
     row: int
     col: int
 
-    def get_next(self) -> SudokuCell:
+    def get_next(self) -> CellCoordinates:
         """
         Returns a SudokuCell instance that represents the next cell, relative to the current one
 
@@ -65,6 +65,6 @@ class SudokuCell:  # TODO cell coordinates?
         is_next_row = self.col + 1 == 9
         next_row = self.row + 1 if is_next_row else self.row
 
-        return SudokuCell(
+        return CellCoordinates(
             row=next_row, col=next_col
         )
