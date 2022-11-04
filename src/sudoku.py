@@ -8,7 +8,7 @@ import numpy as np
 
 
 class SudokuGrid:
-    grid: np.ndarray
+    _inner_grid: np.ndarray
     """
     9x9 Sudoku grid
     """
@@ -18,7 +18,7 @@ class SudokuGrid:
     Value used to mark empty cells in the Sudoku grid
     """
 
-    cell_domains: Dict[CellCoordinates, Set[int]]
+    _cell_domains: Dict[CellCoordinates, Set[int]]
     """
     Dictionary that pairs each cell coordinate with its domain, which consists
     in the set of 1 to 9 integers that can be assigned to that cell without
@@ -37,11 +37,11 @@ class SudokuGrid:
         assert empty_cell_marker not in [1, 2, 3, 4, 5, 6, 7, 8, 9], \
             "Empty cells cannot be marked with integers from 1 to 9"
 
-        self.grid = np.full((9, 9), empty_cell_marker) if starting_grid is None else starting_grid
+        self._inner_grid = np.full((9, 9), empty_cell_marker) if starting_grid is None else starting_grid
 
         # Initialize cell domains by scanning the board and accounting
         # for starting non-empty cells
-        self.cell_domains = {}
+        self._cell_domains = {}
         maximum_domain = set(range(1, 9+1))  # TODO add empty cell to domain?
         for row in range(0, 8+1):
             row_domain = set(self.get_row(i=row))
@@ -54,10 +54,10 @@ class SudokuGrid:
 
                 # Cell domain = maximum possible domain - union(row, col, square)
                 cell_domain = maximum_domain.difference(set.union(row_domain, col_domain, square_domain))
-                self.cell_domains[current_cell] = cell_domain
+                self._cell_domains[current_cell] = cell_domain
 
     def get_value(self, cell: CellCoordinates) -> int:
-        return self.grid[cell.row, cell.col]
+        return self._inner_grid[cell.row, cell.col]
 
     def set_value(self, cell: CellCoordinates, val: int, only_if_empty: bool = True):
         """
@@ -72,20 +72,18 @@ class SudokuGrid:
             otherwise an exception is raised
         """
 
-        assert val in [1, 2, 3, 4, 5, 6, 7, 8, 9, self.empty_cell_marker], "Provided value is not valid"
-
-        # TODO assert if in domain (manually include empty cell?)
+        assert val in self._cell_domains[cell] or val == self.empty_cell_marker, "Provided value is not valid"
 
         if only_if_empty:
-            if self.grid[cell.row, cell.col] != self.empty_cell_marker:
-                raise ValueError(f"Cannot set a value to a non-empty cell: {cell}")
+            if self._inner_grid[cell.row, cell.col] != self.empty_cell_marker:
+                raise ValueError(f"Cannot set a value to non-empty cell: {cell}")
 
         # TODO update domains of rows, cols and squares
         #   if value != empty: remove value from domains
         #   if value == empty: add value to domains
         # TODO function set_empty?
 
-        self.grid[cell.row, cell.col] = val
+        self._inner_grid[cell.row, cell.col] = val
 
     def get_row(self, i: int) -> np.ndarray:
         """
@@ -96,7 +94,7 @@ class SudokuGrid:
 
         assert 0 <= i <= 8, "Index out of range"
 
-        return self.grid[i, :]
+        return self._inner_grid[i, :]
 
     def get_column(self, i: int) -> np.ndarray:
         """
@@ -107,7 +105,7 @@ class SudokuGrid:
 
         assert 0 <= i <= 8, "Index out of range"
 
-        return self.grid[:, i]
+        return self._inner_grid[:, i]
 
     def get_square(self, cell: CellCoordinates) -> np.ndarray:
         """
@@ -123,11 +121,11 @@ class SudokuGrid:
         starting_row = (cell.row // 3) * 3
         starting_col = (cell.col // 3) * 3
 
-        return self.grid[starting_row:starting_row + 3, starting_col:starting_col + 3]
+        return self._inner_grid[starting_row:starting_row + 3, starting_col:starting_col + 3]
 
     def is_full(self) -> bool:
         # Full when there are no more empty cells
-        return self.empty_cell_marker not in self.grid
+        return self.empty_cell_marker not in self._inner_grid
 
 
 @dataclass(frozen=True)
