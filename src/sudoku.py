@@ -37,8 +37,10 @@ class SudokuGrid:
 
     def set_value(self, cell: CellCoordinates, val: int, only_if_empty: bool = True):
         """
-        Sets the value of the specified cell. There is an option to specify that only empty cells
-        can be set, causing an exception to be raised otherwise (default behavior).
+        Sets the value of the specified cell.
+        The value can be a number from 1 to 9, or the empty cell marker.
+        There is an option to specify that only empty cells can be set,
+        causing an exception to be raised otherwise (default behavior).
 
         :param cell: coordinates of the cell to set
         :param val: value to set to the cell
