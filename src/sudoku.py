@@ -9,6 +9,14 @@ EMPTY_CELL_VALUE = -777
 
 class SudokuGrid:
     grid: np.ndarray
+    """
+    9x9 Sudoku grid
+    """
+
+    empty_cell_value: int
+    """
+    Value used to mark empty cells in the Sudoku grid
+    """
 
     def __init__(self, starting_grid: np.ndarray = None, empty_cell_value: int = EMPTY_CELL_VALUE):
         """
@@ -19,6 +27,8 @@ class SudokuGrid:
         """
 
         assert starting_grid.shape[0] == 9 and starting_grid.shape[1] == 9, "Provided sudoku grid is not 9x9"
+        assert empty_cell_value not in [1, 2, 3, 4, 5, 6, 7, 8, 9], \
+            "Empty cells cannot be marked with integers from 1 to 9"
 
         self.grid = np.full((9, 9), empty_cell_value) if starting_grid is None else starting_grid
 
@@ -26,7 +36,7 @@ class SudokuGrid:
         return self.grid[cell.row, cell.col]
 
     def set_value(self, cell: CellCoordinates, val: int):
-        assert val in [1, 2, 3, 4, 5, 6, 7, 8, 9, EMPTY_CELL_VALUE], "Provided value is not valid"
+        assert val in [1, 2, 3, 4, 5, 6, 7, 8, 9, self.empty_cell_value], "Provided value is not valid"
 
         self.grid[cell.row, cell.col] = val
 
@@ -37,15 +47,15 @@ class SudokuGrid:
         return self.grid[:, i]
 
     def get_square(self, starting_row: int, starting_col: int) -> np.ndarray:
-        return self.grid[starting_row:starting_row+3, starting_col:starting_col+3]
+        return self.grid[starting_row:starting_row + 3, starting_col:starting_col + 3]
 
     def is_full(self) -> bool:
         # Full when there are no more empty cells
-        return EMPTY_CELL_VALUE not in self.grid
+        return self.empty_cell_value not in self.grid
 
 
 @dataclass(frozen=True)
-class CellCoordinates:  # TODO cell coordinates?
+class CellCoordinates:
     row: int
     col: int
 
