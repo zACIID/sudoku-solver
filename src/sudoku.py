@@ -10,14 +10,17 @@ EMPTY_CELL_VALUE = -777
 class SudokuGrid:
     grid: np.ndarray
 
-    def __init__(self, starting_grid: np.ndarray = None):
+    def __init__(self, starting_grid: np.ndarray = None, empty_cell_value: int = EMPTY_CELL_VALUE):
         """
-        :param starting_grid:
+        :param starting_grid: starting sudoku grid.
+            Empty cells must be marked with the provided value.
+        :param empty_cell_value: value that empty cells are marked with. Must be a number
+            out of the 1 to 9 integer interval (which is that of valid sudoku numbers)
         """
 
         assert starting_grid.shape[0] == 9 and starting_grid.shape[1] == 9, "Provided sudoku grid is not 9x9"
 
-        self.grid = np.full((9, 9), EMPTY_CELL_VALUE) if starting_grid is None else starting_grid
+        self.grid = np.full((9, 9), empty_cell_value) if starting_grid is None else starting_grid
 
     def get_value(self, cell: SudokuCell) -> int:
         return self.grid[cell.row, cell.col]
