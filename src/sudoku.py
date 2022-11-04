@@ -35,8 +35,22 @@ class SudokuGrid:
     def get_value(self, cell: CellCoordinates) -> int:
         return self.grid[cell.row, cell.col]
 
-    def set_value(self, cell: CellCoordinates, val: int):
+    def set_value(self, cell: CellCoordinates, val: int, only_if_empty: bool = True):
+        """
+        Sets the value of the specified cell. There is an option to specify that only empty cells
+        can be set, causing an exception to be raised otherwise (default behavior).
+
+        :param cell: coordinates of the cell to set
+        :param val: value to set to the cell
+        :param only_if_empty: if True (default), only empty cells can be set,
+            otherwise an exception is raised
+        """
+
         assert val in [1, 2, 3, 4, 5, 6, 7, 8, 9, self.empty_cell_value], "Provided value is not valid"
+
+        if only_if_empty:
+            if self.grid[cell.row, cell.col] != self.empty_cell_value:
+                raise ValueError(f"Cannot set a value to a non-empty cell: {cell}")
 
         self.grid[cell.row, cell.col] = val
 
@@ -78,3 +92,6 @@ class CellCoordinates:
         return CellCoordinates(
             row=next_row, col=next_col
         )
+
+    def __str__(self):
+        return f"(row: {self.row}, col: {self.col})"
