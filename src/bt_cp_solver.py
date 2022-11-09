@@ -4,10 +4,9 @@ Sudoku solver based on Recursive Back-tracking and Constraint Propagation
 from __future__ import annotations
 
 from typing import Tuple
-from copy import deepcopy
 
-import constraints as cn
-from sudoku import SudokuGrid, ConstraintPropagationSudokuGrid, CellCoordinates
+import src.constraints as cn
+from src.sudoku import SudokuGrid, ConstraintPropagationSudokuGrid, CellCoordinates
 
 
 def bt_cp_sudoku_solver(sudoku: SudokuGrid) -> SudokuGrid:

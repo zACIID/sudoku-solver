@@ -1,6 +1,6 @@
 import numpy as np
 
-import sudoku as sud
+import src.sudoku as sud
 
 
 def is_solution_correct(solution: sud.SudokuGrid) -> bool:
