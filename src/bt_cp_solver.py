@@ -7,10 +7,10 @@ from typing import Tuple
 from copy import deepcopy
 
 import constraints as cn
-from sudoku import ConstraintPropagationSudokuGrid, CellCoordinates
+from sudoku import SudokuGrid, ConstraintPropagationSudokuGrid, CellCoordinates
 
 
-def bt_cp_sudoku_solver(sudoku: ConstraintPropagationSudokuGrid) -> ConstraintPropagationSudokuGrid:
+def bt_cp_sudoku_solver(sudoku: SudokuGrid) -> SudokuGrid:
     """
     Solves the provided sudoku with the Back-tracking + Constraint Propagation approach.
     Returns the solved sudoku grid.
@@ -51,9 +51,8 @@ def bt_cp_sudoku_solver(sudoku: ConstraintPropagationSudokuGrid) -> ConstraintPr
         return False, grid
 
     # Pass copy to avoid side effects
-    sudoku_copy = deepcopy(sudoku)
     solved, solution = solver_aux(
-        grid=sudoku_copy,
+        grid=ConstraintPropagationSudokuGrid.from_sudoku_grid(grid=sudoku),
         current_cell=CellCoordinates(row=0, col=0)
     )
 

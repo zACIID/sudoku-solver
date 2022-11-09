@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Dict, Tuple, Set
+from copy import deepcopy
 
 import numpy as np
 
@@ -30,6 +31,14 @@ class SudokuGrid:
             "Empty cells cannot be marked with integers from 1 to 9"
 
         self._inner_grid = np.full((9, 9), empty_cell_marker) if starting_grid is None else starting_grid
+
+    def get_inner_grid_copy(self) -> np.ndarray:
+        """
+        Returns a copy (deep) of the underlying sudoku grid representation
+        :return: grid deep copy
+        """
+
+        return deepcopy(self._inner_grid)
 
     def get_value(self, cell: CellCoordinates) -> int:
         return self._inner_grid[cell.row, cell.col]
@@ -151,6 +160,21 @@ class ConstraintPropagationSudokuGrid(SudokuGrid):
                 self._cell_domains[current_cell] = cell_domain
 
         self._affected_cells_cache = {}
+
+    @staticmethod
+    def from_sudoku_grid(grid: SudokuGrid) -> ConstraintPropagationSudokuGrid:
+        """
+        Creates a new instance based on the provided sudoku grid.
+        Everything is deep-copied to avoid side-effects.
+
+        :param grid: existing sudoku grid to base the current one on
+        :return: new instance based on the provided grid
+        """
+
+        return ConstraintPropagationSudokuGrid(
+            starting_grid=grid.get_inner_grid_copy(),
+            empty_cell_marker=grid.empty_cell_marker
+        )
 
     def set_value(self, cell: CellCoordinates, val: int, only_if_empty: bool = True):
         assert val in self._cell_domains[cell], "Provided value is not valid"
