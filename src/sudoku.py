@@ -97,6 +97,9 @@ class SudokuGrid:
             if self._inner_grid[cell.row, cell.col] != self.empty_cell_marker:
                 raise ValueError(f"Cannot set a value to non-empty cell: {cell}")
 
+        if not (1 <= val <= 9):
+            raise ValueError(f"The provided value '{val}' is not a valid sudoku number")
+
         # TODO update domains of rows, cols and squares
         #   if value != empty: remove value from domains
         #   if value == empty: add value to domains
@@ -289,8 +292,10 @@ class ConstraintPropagationSudokuGrid(SudokuGrid):
 
     def get_minimum_domain_cell(self) -> Tuple[CellCoordinates, Set[int]]:
         """
-        Returns the coordinates of the cell with the minimum (smallest) domain
-        :return:
+        Returns the coordinates of the cell with the minimum (smallest) non-empty domain,
+        along with said domain
+
+        :return: cell with smallest non-empty domain and its domain
         """
 
         # Cell with non-empty domains
