@@ -7,13 +7,10 @@ from typing import Tuple
 from copy import deepcopy
 
 import constraints as cn
-from sudoku import SudokuGrid, CellCoordinates
+from sudoku import ConstraintPropagationSudokuGrid, CellCoordinates
 
 
-# TODO metodo per non settare celle originali (controllare se all'inizio sono settate con EMPTY_VALUE?)
-
-
-def sudoku_solver(sudoku: SudokuGrid) -> SudokuGrid:
+def bt_cp_sudoku_solver(sudoku: ConstraintPropagationSudokuGrid) -> ConstraintPropagationSudokuGrid:
     """
     Solves the provided sudoku with the Back-tracking + Constraint Propagation approach.
     Returns the solved sudoku grid.
@@ -22,33 +19,36 @@ def sudoku_solver(sudoku: SudokuGrid) -> SudokuGrid:
     :return: solved sudoku grid
     """
 
-    def solver_aux(grid: SudokuGrid, current_cell: CellCoordinates) -> Tuple[bool, SudokuGrid]:
-        next_cell = current_cell.get_next()
+    def solver_aux(
+            grid: ConstraintPropagationSudokuGrid,
+            current_cell: CellCoordinates
+    ) -> Tuple[bool, ConstraintPropagationSudokuGrid]:
+        next_cell, min_domain = grid.get_minimum_domain_cell()
 
         # If current cell is filled, go to next
-        if sudoku.get_value(cell=current_cell) != sudoku.empty_cell_marker:
+        if grid.get_value(cell=current_cell) != grid.empty_cell_marker:
             if next_cell is None:
-                return cn.is_solution_correct(sudoku), sudoku
+                return cn.is_solution_correct(grid), grid
 
             return solver_aux(grid=grid, current_cell=current_cell.get_next())
 
         for attempt in range(1, 9+1):
             # Allow current cell to be overwritten
-            sudoku.set_value(cell=current_cell, val=attempt, only_if_empty=False)
+            grid.set_value(cell=current_cell, val=attempt, only_if_empty=False)
 
             # Continue only if not at the end
             if next_cell is not None:
                 solved, solution = solver_aux(grid=grid, current_cell=next_cell)
             else:
-                solved = cn.is_solution_correct(solution=sudoku)
-                solution = sudoku
+                solved = cn.is_solution_correct(solution=grid)
+                solution = grid
 
             if solved:
                 return True, solution
 
         # If no solution found at current cell, set as empty again and go back
-        sudoku.set_value(cell=current_cell, val=sudoku.empty_cell_marker)
-        return False, sudoku
+        grid.set_value(cell=current_cell, val=grid.empty_cell_marker)
+        return False, grid
 
     # Pass copy to avoid side effects
     sudoku_copy = deepcopy(sudoku)
