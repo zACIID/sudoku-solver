@@ -7,6 +7,40 @@ from copy import deepcopy
 import numpy as np
 
 
+@dataclass(frozen=True)
+class CellCoordinates:
+    row: int
+    col: int
+
+    def get_next(self) -> CellCoordinates | None:
+        """
+        Returns a SudokuCell instance that represents the next cell, relative to the current one.
+        If the current instance is the last cell of the grid, returns None.
+
+        :return: next cell instance, None if this is the last cell of the grid.
+        """
+
+        # Here next is determined as right-adjacent with respect to columns
+        # If the current cell is on the last column (col == 8), then move to
+        #   the first cell (col == 0) of the next row
+
+        # Last cell of the grid: return None
+        if self.col == 8 and self.row == 8:
+            return None
+
+        next_col = (self.col + 1) % 9
+
+        is_next_row = self.col + 1 == 9
+        next_row = self.row + 1 if is_next_row else self.row
+
+        return CellCoordinates(
+            row=next_row, col=next_col
+        )
+
+    def __str__(self):
+        return f"(row: {self.row}, col: {self.col})"
+
+
 class SudokuGrid:
     _inner_grid: np.ndarray
     """
@@ -26,9 +60,11 @@ class SudokuGrid:
             out of the 1 to 9 integer interval (which is that of valid sudoku numbers)
         """
 
-        assert starting_grid.shape[0] == 9 and starting_grid.shape[1] == 9, "Provided sudoku grid is not 9x9"
-        assert empty_cell_marker not in [1, 2, 3, 4, 5, 6, 7, 8, 9], \
-            "Empty cells cannot be marked with integers from 1 to 9"
+        if not (starting_grid.shape[0] == 9 and starting_grid.shape[1] == 9):
+            raise ValueError("Provided sudoku grid is not 9x9")
+
+        if empty_cell_marker in [1, 2, 3, 4, 5, 6, 7, 8, 9]:
+            raise ValueError("Empty cells cannot be marked with integers from 1 to 9")
 
         self._inner_grid = np.full((9, 9), empty_cell_marker) if starting_grid is None else starting_grid
         self.empty_cell_marker = empty_cell_marker
@@ -85,7 +121,8 @@ class SudokuGrid:
         :return: row at the specified index
         """
 
-        assert 0 <= i <= 8, "Index out of range"
+        if not (0 <= i <= 8):
+            raise ValueError("Index out of range")
 
         return self._inner_grid[i, :]
 
@@ -96,7 +133,8 @@ class SudokuGrid:
         :return: column at the specified index
         """
 
-        assert 0 <= i <= 8, "Index out of range"
+        if not (0 <= i <= 8):
+            raise ValueError("Index out of range")
 
         return self._inner_grid[:, i]
 
@@ -119,6 +157,14 @@ class SudokuGrid:
     def is_full(self) -> bool:
         # Full when there are no more empty cells
         return self.empty_cell_marker not in self._inner_grid
+
+
+class NotInDomainException(Exception):
+    def __init__(self, cell: CellCoordinates, value: int):
+        super(NotInDomainException, self).__init__(
+            f"The cell {cell} cannot be set to value {value} "
+            f"because it doesn't belong to its domain "
+        )
 
 
 class ConstraintPropagationSudokuGrid(SudokuGrid):
@@ -178,7 +224,8 @@ class ConstraintPropagationSudokuGrid(SudokuGrid):
         )
 
     def set_value(self, cell: CellCoordinates, val: int, only_if_empty: bool = True):
-        assert val in self._cell_domains[cell], "Provided value is not valid"
+        if val not in self._cell_domains[cell]:
+            raise NotInDomainException(cell=cell, value=val)
 
         # Empty the cell first to add the previous value
         #   back to the domains of affected cells
@@ -246,8 +293,6 @@ class ConstraintPropagationSudokuGrid(SudokuGrid):
         :return:
         """
 
-        x = self._cell_domains.items()
-
         # Cell with non-empty domains
         # TODO fix type hinting
         non_empty_domains: List[Tuple[CellCoordinates, Set[int]]] = list(
@@ -259,37 +304,3 @@ class ConstraintPropagationSudokuGrid(SudokuGrid):
 
         min_cell, min_domain = min(non_empty_domains, key=lambda kv_pair: len(kv_pair[1]))
         return min_cell, min_domain
-
-
-@dataclass(frozen=True)
-class CellCoordinates:
-    row: int
-    col: int
-
-    def get_next(self) -> CellCoordinates | None:
-        """
-        Returns a SudokuCell instance that represents the next cell, relative to the current one.
-        If the current instance is the last cell of the grid, returns None.
-
-        :return: next cell instance, None if this is the last cell of the grid.
-        """
-
-        # Here next is determined as right-adjacent with respect to columns
-        # If the current cell is on the last column (col == 8), then move to
-        #   the first cell (col == 0) of the next row
-
-        # Last cell of the grid: return None
-        if self.col == 8 and self.row == 8:
-            return None
-
-        next_col = (self.col + 1) % 9
-
-        is_next_row = self.col + 1 == 9
-        next_row = self.row + 1 if is_next_row else self.row
-
-        return CellCoordinates(
-            row=next_row, col=next_col
-        )
-
-    def __str__(self):
-        return f"(row: {self.row}, col: {self.col})"
