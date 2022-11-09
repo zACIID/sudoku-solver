@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from src.sudoku import SudokuGrid, ConstraintPropagationSudokuGrid, CellCoordinates
+from src.sudoku import SudokuGrid, CellCoordinates
 
 
 @pytest.mark.parametrize("cell, value", [
@@ -72,6 +72,3 @@ def test_empty_cell(cell: CellCoordinates, filler: int):
     # Assert
     inner_grid = sudoku_grid.get_inner_grid_copy()
     assert inner_grid[cell.row, cell.col] == filler
-
-
-

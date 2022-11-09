@@ -14,7 +14,7 @@ EMPTY_CELL = -777
     ],
     params=[
         # Easy grid
-        np.ndarray([
+        np.array([
             [EMPTY_CELL, 8, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, 2, EMPTY_CELL, EMPTY_CELL],
             [EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, 8, 4, EMPTY_CELL, 9, EMPTY_CELL],
             [EMPTY_CELL, EMPTY_CELL, 6, 3, 2, EMPTY_CELL, EMPTY_CELL, 1, EMPTY_CELL],
@@ -27,7 +27,7 @@ EMPTY_CELL = -777
         ]),
 
         # Medium grid
-        np.ndarray([
+        np.array([
             [EMPTY_CELL, 8, EMPTY_CELL, 6, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, 1, EMPTY_CELL],
             [EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, 8, 2, 5, 6],
             [EMPTY_CELL, EMPTY_CELL, 1, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL],
@@ -40,7 +40,7 @@ EMPTY_CELL = -777
         ]),
 
         # Hard grid
-        np.ndarray([
+        np.array([
             [EMPTY_CELL, EMPTY_CELL, 6, 3, EMPTY_CELL, 7, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL],
             [EMPTY_CELL, EMPTY_CELL, 4, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, 5],
             [1, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, EMPTY_CELL, 6, EMPTY_CELL, 8, 2],
@@ -67,7 +67,7 @@ def sudoku_grid(request) -> SudokuGrid:
 
 @pytest.fixture
 def solved_sudoku() -> SudokuGrid:
-    solved_grid = np.ndarray([
+    solved_grid = np.array([
         [8, 2, 7, 1, 5, 4, 3, 9, 6],
         [9, 6, 5, 3, 2, 7, 1, 4, 8],
         [3, 4, 1, 6, 8, 9, 7, 5, 2],
@@ -91,13 +91,13 @@ def solved_sudoku() -> SudokuGrid:
         "square"
     ],
     params=[
-        np.ndarray([8, 2, EMPTY_CELL, 1, 5, 4, 3, EMPTY_CELL, EMPTY_CELL]),
-        np.ndarray(
+        np.array([8, 2, EMPTY_CELL, 1, 5, 4, 3, EMPTY_CELL, EMPTY_CELL]),
+        np.array(
             [
                 [8, 2, EMPTY_CELL],
                 [9, 6, EMPTY_CELL],
                 [3, EMPTY_CELL, EMPTY_CELL]
-        ])
+            ])
     ]
 )
 def valid_sudoku_row_column_square(request) -> np.ndarray:
@@ -110,13 +110,14 @@ def valid_sudoku_row_column_square(request) -> np.ndarray:
         "square"
     ],
     params=[
-        np.ndarray([2, 2, EMPTY_CELL, 1, 5, 4, 2, EMPTY_CELL, EMPTY_CELL]),
-        np.ndarray(
+        np.array([2, 2, EMPTY_CELL, 1, 5, 4, 2, EMPTY_CELL, EMPTY_CELL]),
+        np.array(
             [
                 [8, 2, EMPTY_CELL],
                 [9, 9, EMPTY_CELL],
                 [3, EMPTY_CELL, 3]
-        ])
+            ]
+        )
     ]
 )
 def not_valid_sudoku_row_column_square(request) -> np.ndarray:
