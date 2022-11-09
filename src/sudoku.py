@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Tuple, Set
+from typing import Dict, Tuple, Set, List
 from copy import deepcopy
 
 import numpy as np
@@ -31,6 +31,7 @@ class SudokuGrid:
             "Empty cells cannot be marked with integers from 1 to 9"
 
         self._inner_grid = np.full((9, 9), empty_cell_marker) if starting_grid is None else starting_grid
+        self.empty_cell_marker = empty_cell_marker
 
     def get_inner_grid_copy(self) -> np.ndarray:
         """
@@ -153,7 +154,7 @@ class ConstraintPropagationSudokuGrid(SudokuGrid):
                 current_cell = CellCoordinates(row=row, col=col)
 
                 col_domain = set(self.get_column(i=col))
-                square_domain = set(self.get_square(cell=current_cell))
+                square_domain = set(self.get_square(cell=current_cell).flatten())
 
                 # Cell domain = maximum possible domain - union(row, col, square)
                 cell_domain = maximum_domain.difference(set.union(row_domain, col_domain, square_domain))
@@ -244,7 +245,19 @@ class ConstraintPropagationSudokuGrid(SudokuGrid):
         Returns the coordinates of the cell with the minimum (smallest) domain
         :return:
         """
-        min_cell, min_domain = min(self._cell_domains.items(), key=lambda d: len(d))
+
+        x = self._cell_domains.items()
+
+        # Cell with non-empty domains
+        # TODO fix type hinting
+        non_empty_domains: List[Tuple[CellCoordinates, Set[int]]] = list(
+            filter(
+                lambda kv_pair: len(kv_pair[1]) != 0,
+                self._cell_domains.items()
+            )
+        )
+
+        min_cell, min_domain = min(non_empty_domains, key=lambda kv_pair: len(kv_pair[1]))
         return min_cell, min_domain
 
 
