@@ -3,7 +3,9 @@ Sudoku solver based on Recursive Back-tracking and Constraint Propagation
 """
 from __future__ import annotations
 
-from typing import Tuple
+from typing import Tuple, Set
+
+from loguru import logger
 
 import src.constraints as cn
 from src.sudoku import SudokuGrid, ConstraintPropagationSudokuGrid, CellCoordinates
@@ -20,39 +22,61 @@ def bt_cp_sudoku_solver(sudoku: SudokuGrid) -> SudokuGrid:
 
     def solver_aux(
             grid: ConstraintPropagationSudokuGrid,
-            current_cell: CellCoordinates
+            current_cell: CellCoordinates,
+            current_domain: Set[int]
     ) -> Tuple[bool, ConstraintPropagationSudokuGrid]:
-        next_cell, min_domain = grid.get_minimum_domain_cell()
+        # If None it means that all cells have been exhausted and the sudoku was solved
+        if current_cell is None:
+            return cn.is_solution_correct(grid), grid
 
         # If current cell is filled, go to next
         if grid.get_value(cell=current_cell) != grid.empty_cell_marker:
-            if next_cell is None:
-                return cn.is_solution_correct(grid), grid
+            next_cell, next_domain = grid.get_minimum_domain_empty_cell()
 
-            return solver_aux(grid=grid, current_cell=current_cell.get_next())
+            return solver_aux(grid=grid, current_cell=next_cell, current_domain=next_domain)
 
-        for attempt in range(1, 9+1):
+        logger.info(f"Attempting cell {current_cell}")
+        logger.debug(f"Current cell domain: {current_domain}")
+        logger.debug(f"Current Grid:\n"
+                     f"{grid.get_inner_grid_copy()}")
+
+        if len(current_domain) == 0:
+            # If the current cell has an empty domain return False
+            #   because it can't happen unless the grid is wrong
+            return False, grid
+
+        for attempt in current_domain:
             # Allow current cell to be overwritten
             grid.set_value(cell=current_cell, val=attempt, only_if_empty=False)
 
-            # Continue only if not at the end
-            if next_cell is not None:
-                solved, solution = solver_aux(grid=grid, current_cell=next_cell)
-            else:
-                solved = cn.is_solution_correct(solution=grid)
-                solution = grid
+            # Go to the next cell after having tried with the current attempt
+            # Note: the next cell and its domain are recalculated every time
+            #   a new attempt is made, because such an action affects the
+            #   domains of other cells
+            next_cell, next_domain = grid.get_minimum_domain_empty_cell()
+            solved, solution = solver_aux(
+                grid=grid,
+                current_cell=next_cell,
+                current_domain=next_domain
+            )
 
             if solved:
                 return True, solution
 
         # If no solution found at current cell, set as empty again and go back
-        grid.set_value(cell=current_cell, val=grid.empty_cell_marker)
+        logger.debug(f"Attempts for cell {current_cell} exhausted, returning...")
+        grid.empty_cell(cell=current_cell)
         return False, grid
 
-    # Pass copy to avoid side effects
+    # Create grid instance that supports constraint propagation
+    cp_grid = ConstraintPropagationSudokuGrid.from_sudoku_grid(grid=sudoku)
+    starting_cell, starting_domain = cp_grid.get_minimum_domain_empty_cell()
+
+    logger.info(f"Starting to solve sudoku from cell {starting_cell}")
     solved, solution = solver_aux(
-        grid=ConstraintPropagationSudokuGrid.from_sudoku_grid(grid=sudoku),
-        current_cell=CellCoordinates(row=0, col=0)
+        grid=cp_grid,
+        current_cell=starting_cell,
+        current_domain=starting_domain
     )
 
     assert cn.is_solution_correct(solution=solution) and solved, (
