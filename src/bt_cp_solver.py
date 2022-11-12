@@ -49,7 +49,7 @@ def bt_cp_sudoku_solver(sudoku: SudokuGrid) -> SudokuGrid:
             # Note: the next cell and its domain are recalculated every time
             #   a new attempt is made, because such an action affects the
             #   domains of other cells
-            next_cell, next_domain = cp_grid.get_minimum_domain_empty_cell()
+            next_cell, next_domain = grid.get_minimum_domain_empty_cell()
             solved, solution = solver_aux(
                 grid=grid,
                 current_cell=next_cell,
