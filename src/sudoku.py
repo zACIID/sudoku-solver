@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Dict, Tuple, Set, List
-from copy import deepcopy
+from copy import deepcopy, copy
 
 import numpy as np
 
@@ -69,6 +69,10 @@ class SudokuGrid:
         self._inner_grid = np.full((9, 9), empty_cell_marker) if starting_grid is None else starting_grid
         self.empty_cell_marker = empty_cell_marker
 
+    def __str__(self):
+        # TODO prettify
+        return str(self._inner_grid)
+
     def get_inner_grid_copy(self) -> np.ndarray:
         """
         Returns a copy (deep) of the underlying sudoku grid representation
@@ -80,7 +84,7 @@ class SudokuGrid:
     def get_value(self, cell: CellCoordinates) -> int:
         return self._inner_grid[cell.row, cell.col]
 
-    def set_value(self, cell: CellCoordinates, val: int, only_if_empty: bool = True):
+    def set_value(self, cell: CellCoordinates, val: int, overwrite: bool = False):
         """
         Sets the value of the specified cell.
         The value can be a number from 1 to 9, or the empty cell marker.
@@ -89,21 +93,16 @@ class SudokuGrid:
 
         :param cell: coordinates of the cell to set
         :param val: value to set to the cell
-        :param only_if_empty: if True (default), only empty cells can be set,
-            otherwise an exception is raised
+        :param overwrite: if False, setting the value of a non-empty cell causes
+            an exception to be raised
         """
 
-        if only_if_empty:
+        if overwrite:
             if self._inner_grid[cell.row, cell.col] != self.empty_cell_marker:
                 raise ValueError(f"Cannot set a value to non-empty cell: {cell}")
 
         if not (1 <= val <= 9):
             raise ValueError(f"The provided value '{val}' is not a valid sudoku number")
-
-        # TODO update domains of rows, cols and squares
-        #   if value != empty: remove value from domains
-        #   if value == empty: add value to domains
-        # TODO function set_empty?
 
         self._inner_grid[cell.row, cell.col] = val
 
@@ -163,10 +162,28 @@ class SudokuGrid:
 
 
 class NotInDomainException(Exception):
-    def __init__(self, cell: CellCoordinates, value: int):
+    def __init__(
+            self, cell: CellCoordinates,
+            actual_domain: Set[int],
+            value: int,
+            grid: np.ndarray = None
+    ):
+        """
+        Exception raised in case a value doesn't belong to the domain
+        of some sudoku cell
+
+        :param cell: sudoku cell
+        :param actual_domain: domain of the cell
+        :param value: value to be set that isn't part of the domain
+        :param grid: state of the sudoku grid
+        """
+
         super(NotInDomainException, self).__init__(
             f"The cell {cell} cannot be set to value {value} "
-            f"because it doesn't belong to its domain "
+            f"because it doesn't belong to its domain.\n"
+            f"Actual domain: {actual_domain}\n"
+            f"Sudoku grid:\n"
+            f"{grid if grid is not None else 'N/A'}"
         )
 
 
@@ -195,21 +212,31 @@ class ConstraintPropagationSudokuGrid(SudokuGrid):
         # Initialize cell domains by scanning the board and accounting
         # for starting non-empty cells
         self._cell_domains = {}
-        maximum_domain = set(range(1, 9+1))  # TODO add empty cell to domain?
         for row in range(0, 8+1):
-            row_domain = set(self.get_row(i=row))
-
             for col in range(0, 8+1):
                 current_cell = CellCoordinates(row=row, col=col)
+                cell_domain = self._calculate_cell_domain(cell=current_cell)
 
-                col_domain = set(self.get_column(i=col))
-                square_domain = set(self.get_square(cell=current_cell).flatten())
-
-                # Cell domain = maximum possible domain - union(row, col, square)
-                cell_domain = maximum_domain.difference(set.union(row_domain, col_domain, square_domain))
                 self._cell_domains[current_cell] = cell_domain
 
+        # Cache initialized empty
         self._affected_cells_cache = {}
+
+    def _calculate_cell_domain(self, cell: CellCoordinates) -> Set[int]:
+        # All available numbers (moves)
+        maximum_domain = set(range(1, 9+1))
+
+        row_domain = set(self.get_row(i=cell.row))
+        available_on_row = maximum_domain.difference(row_domain)
+
+        col_domain = set(self.get_column(i=cell.col))
+        available_on_col = maximum_domain.difference(col_domain)
+
+        square_domain = set(self.get_square(cell=cell).flatten())
+        available_on_square = maximum_domain.difference(square_domain)
+
+        # Cell domain = intersection of available numbers in its row/col/square
+        return set.intersection(available_on_row, available_on_square, available_on_col)
 
     @staticmethod
     def from_sudoku_grid(grid: SudokuGrid) -> ConstraintPropagationSudokuGrid:
@@ -226,32 +253,40 @@ class ConstraintPropagationSudokuGrid(SudokuGrid):
             empty_cell_marker=grid.empty_cell_marker
         )
 
-    def set_value(self, cell: CellCoordinates, val: int, only_if_empty: bool = True):
+    def set_value(self, cell: CellCoordinates, val: int, overwrite: bool = True):
         if val not in self._cell_domains[cell]:
-            raise NotInDomainException(cell=cell, value=val)
+            raise NotInDomainException(
+                cell=cell,
+                actual_domain=self._cell_domains[cell],
+                value=val,
+                grid=self._inner_grid
+            )
 
-        # Empty the cell first to add the previous value
-        #   back to the domains of affected cells
-        self.empty_cell(cell=cell)
+        if not overwrite:
+            # Empty the cell first to add the previous value
+            #   back to the domains of affected cells
+            self.empty_cell(cell=cell)
 
         super(ConstraintPropagationSudokuGrid, self).set_value(
             cell=cell,
             val=val,
-            only_if_empty=only_if_empty
+            overwrite=overwrite
         )
 
-        self._remove_from_affected_domains(val=val, cell_to_update=cell)
+        #self._recalculate_affected_domains(cell_to_update=cell)
+        self._remove_from_affected_domains(val=val, cell_to_update=cell) # TODO old
 
     def empty_cell(self, cell: CellCoordinates):
         previous_value = self.get_value(cell)
 
-        # If cell was previously non-empty, add the previous value back to
-        # the domains of the cells in rows/cols/squares, since it is now
-        # a possible value
-        if previous_value != self.empty_cell_marker:
-            self._add_to_affected_domains(val=previous_value, cell_to_update=cell)
-
         super(ConstraintPropagationSudokuGrid, self).empty_cell(cell=cell)
+
+        # If cell was previously non-empty, recalculate the affected domains,
+        #   AFTER EMPTYING THE CELL
+        #   i.e. domains of cells in same row/col/square, in order to see
+        #   if the previous value of this cell becomes available
+        if previous_value != self.empty_cell_marker:
+            self._recalculate_affected_domains(cell_to_update=cell)
 
     def _get_affected_cells(self, cell_to_update: CellCoordinates) -> Set[CellCoordinates]:
         # Check if the set of affected cells has been calculated before
@@ -263,7 +298,7 @@ class ConstraintPropagationSudokuGrid(SudokuGrid):
                 for i in range(0, 8+1)
             }
             col_cells = {
-                CellCoordinates(row=cell_to_update.row, col=i)
+                CellCoordinates(row=i, col=cell_to_update.col)
                 for i in range(0, 8+1)
             }
 
@@ -283,29 +318,88 @@ class ConstraintPropagationSudokuGrid(SudokuGrid):
     def _remove_from_affected_domains(self, val: int, cell_to_update: CellCoordinates):
         affected_cells = self._get_affected_cells(cell_to_update=cell_to_update)
         for c in affected_cells:
-            self._cell_domains[c].remove(val)
+            try:
+                # Note: it is possible that not all the affected cells contain
+                #   such a value in their domain
+                if val in self._cell_domains[c]:
+                    self._cell_domains[c].remove(val)
 
-    def _add_to_affected_domains(self, val: int, cell_to_update: CellCoordinates):
+                # TODO discard should be the preferred method instead of if+set,
+                #   but it somehow causes seg-fault in debugger???
+                # self._cell_domains[c].discard(val)
+
+            except KeyError:  # TODO debug remove
+                raise NotInDomainException(
+                    cell=c,
+                    actual_domain=self._cell_domains[c],
+                    value=val,
+                    grid=self._inner_grid
+                )
+
+    def _recalculate_affected_domains(self, cell_to_update: CellCoordinates):
         affected_cells = self._get_affected_cells(cell_to_update=cell_to_update)
         for c in affected_cells:
-            self._cell_domains[c].add(val)
+            new_domain = self._calculate_cell_domain(cell=c)
+            self._cell_domains[c] = new_domain
 
-    def get_minimum_domain_cell(self) -> Tuple[CellCoordinates, Set[int]]:
+    def get_domain(self, cell: CellCoordinates) -> Set[int]:
         """
-        Returns the coordinates of the cell with the minimum (smallest) non-empty domain,
-        along with said domain
+        Returns the domain (a copy of) the specified cell
 
-        :return: cell with smallest non-empty domain and its domain
+        :param cell: cell to retrieve the domain of
+        :return: domain of the specified cell
         """
 
-        # Cell with non-empty domains
+        return self._cell_domains[cell].copy()
+
+    def get_minimum_domain_empty_cell(self) -> Tuple[CellCoordinates, Set[int]] | Tuple[None, None]:
+        """
+        Returns the coordinates of the empty cell with the minimum (smallest) domain,
+        along with said domain.
+
+        :return: cell with smallest non-empty domain and its domain,
+            or the pair (None, None) if there are no empty cells left
+        """
+
+        # Get empty cells
         # TODO fix type hinting
-        non_empty_domains: List[Tuple[CellCoordinates, Set[int]]] = list(
+        empty_cells = list(
             filter(
-                lambda kv_pair: len(kv_pair[1]) != 0,
+                lambda kv_pair: self.get_value(kv_pair[0]) == self.empty_cell_marker,
                 self._cell_domains.items()
             )
         )
 
-        min_cell, min_domain = min(non_empty_domains, key=lambda kv_pair: len(kv_pair[1]))
-        return min_cell, min_domain
+        if len(empty_cells) == 0:
+            return None, None
+
+        # Get the empty cell with the smallest domain
+        min_cell, min_domain = min(empty_cells, key=lambda kv_pair: len(kv_pair[1]))
+
+        return min_cell, copy(min_domain)
+
+    def get_maximum_domain_empty_cell(self) -> Tuple[CellCoordinates, Set[int]] | Tuple[None, None]:
+        """
+        Returns the coordinates of the empty cell with the maximum (biggest) domain,
+        along with said domain.
+
+        :return: cell with biggest non-empty domain and its domain,
+            or the pair (None, None) if there are no empty cells left
+        """
+
+        # Get empty cells
+        # TODO fix type hinting
+        empty_cells: List[Tuple[CellCoordinates, Set[int]]] = list(
+            filter(
+                lambda kv_pair: self.get_value(kv_pair[0]) == self.empty_cell_marker,
+                self._cell_domains.items()
+            )
+        )
+
+        if len(empty_cells) == 0:
+            return None, None
+
+        # Get the empty cell with the smallest domain
+        max_cell, max_domain = max(empty_cells, key=lambda kv_pair: len(kv_pair[1]))
+
+        return max_cell, copy(max_domain)
