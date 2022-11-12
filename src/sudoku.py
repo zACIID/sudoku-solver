@@ -7,6 +7,12 @@ from copy import deepcopy, copy
 import numpy as np
 
 
+# TODO refactoring ideas:
+#   - Sudoku becomes a folder with base.py and constraint_propagation.py
+#   - bt_cp_solver becomes solvers/bt_cp.py
+#   - constraints.py becomes solvers/solution_checks.py or solvers/utils.py
+
+
 @dataclass(frozen=True)
 class CellCoordinates:
     row: int
