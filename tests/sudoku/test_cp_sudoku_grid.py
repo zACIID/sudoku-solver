@@ -1,3 +1,5 @@
+from typing import Set
+
 import numpy as np
 import pytest
 
@@ -36,9 +38,53 @@ def test_set_value_and_domain_reduction(cell: CellCoordinates, value: int):
     inner_grid = sudoku_grid.get_inner_grid_copy()
     assert inner_grid[cell.row, cell.col] == value
 
+    # The value that was set should not be in the domain of any cell
+    #   in the row/col/square of the current cell
+    affected_cells = get_affected_cells(cell_to_update=cell)
+    for c in affected_cells:
+        assert value not in sudoku_grid.get_domain(cell=c)
+
+
+def get_affected_cells(cell_to_update: CellCoordinates) -> Set[CellCoordinates]:
+    affected_cells = set()
+    for i in range(0, 8 + 1):
+        affected_cells.add(CellCoordinates(row=cell_to_update.row, col=i))
+        affected_cells.add(CellCoordinates(row=i, col=cell_to_update.col))
+
+    square_starting_row = (cell_to_update.row // 3) * 3
+    square_starting_col = (cell_to_update.col // 3) * 3
+    for i in range(square_starting_row, square_starting_row + 3):
+        for j in range(square_starting_col, square_starting_col + 3):
+            affected_cells.add(CellCoordinates(row=i, col=j))
+
+    return affected_cells
+
+
+@pytest.mark.cp_grid
+def test_set_value_not_in_domain():
+    # Arrange
+    filler_value = -777
+    cell = CellCoordinates(
+        row=np.random.randint(low=0, high=8 + 1),
+        col=np.random.randint(low=0, high=8 + 1)
+    )
+    value = 9
+    test_grid = np.full(shape=(9, 9), fill_value=filler_value)
+    sudoku_grid = ConstraintPropagationSudokuGrid(
+        starting_grid=test_grid,
+        empty_cell_marker=filler_value
+    )
+
+    # Act
+    sudoku_grid.set_value(cell=cell, val=value)
+
+    # Assert
+    inner_grid = sudoku_grid.get_inner_grid_copy()
+    assert inner_grid[cell.row, cell.col] == value
+
     with pytest.raises(NotInDomainException):
-        # This should raise an exception because the same row cannot contain
-        #   the same value more than once
+        # This should raise an exception because the same row (or col or square)
+        #   cannot contain the same value more than once
         same_row = CellCoordinates(row=cell.row, col=(cell.col + 1) % 9)
         sudoku_grid.set_value(cell=same_row, val=value)
 
@@ -59,13 +105,13 @@ def test_set_value_and_domain_reduction(cell: CellCoordinates, value: int):
     pytest.param(CellCoordinates(row=5, col=5), 7, marks=pytest.mark.xfail)
 ])
 @pytest.mark.cp_grid
-def test_empty_cell_and_domain_expansion(cell: CellCoordinates, filler: int):
+def test_empty_cell(cell: CellCoordinates, filler: int, solved_sudoku: SudokuGrid):
     # Arrange
-    value_before_empty = 9
-    test_grid = np.full(shape=(9, 9), fill_value=filler)
-    test_grid[cell.row, cell.col] = value_before_empty
+    solved_grid = solved_sudoku.get_inner_grid_copy()
+    value_before_empty = solved_grid[cell.row, cell.col]
+    solved_grid[cell.row, cell.col] = value_before_empty
     sudoku_grid = ConstraintPropagationSudokuGrid(
-        starting_grid=test_grid,
+        starting_grid=solved_grid,
         empty_cell_marker=filler
     )
 
@@ -76,11 +122,27 @@ def test_empty_cell_and_domain_expansion(cell: CellCoordinates, filler: int):
     inner_grid = sudoku_grid.get_inner_grid_copy()
     assert inner_grid[cell.row, cell.col] == filler
 
-    # This should not raise an exception because the same row cannot contain
-    #   the same value more than once
-    same_row = CellCoordinates(row=cell.row, col=(cell.col + 1) % 9)
-    sudoku_grid.set_value(cell=same_row, val=value_before_empty)
-    assert True
+
+# TODO test domain expansion on empty_cell: it is not so simple as in checking that affected
+#   cells have the previous value added back to their domains, proper checks need to be made
+#   because not all cells might be affected. Need to create an ad-hoc grid and test the expected cells
+
+
+@pytest.mark.cp_grid
+def test_domain_initialization(sudoku_grid: SudokuGrid):
+    cp_grid = ConstraintPropagationSudokuGrid.from_sudoku_grid(grid=sudoku_grid)
+
+    # Check that the value of each cell isn't in the domain
+    #   of the cells in the same row/col/square
+    for row in range(0, 8 + 1):
+        for col in range(0, 8 + 1):
+            current_cell = CellCoordinates(row=row, col=col)
+            current_val = cp_grid.get_value(cell=current_cell)
+
+            affected_cells = get_affected_cells(cell_to_update=current_cell)
+            for c in affected_cells:
+                domain = cp_grid.get_domain(cell=c)
+                assert current_val not in domain
 
 
 @pytest.mark.parametrize("min_domain_cell", [
@@ -94,7 +156,7 @@ def test_empty_cell_and_domain_expansion(cell: CellCoordinates, filler: int):
     )
 ])
 @pytest.mark.cp_grid
-def test_get_minimum_domain_cell(min_domain_cell: CellCoordinates, solved_sudoku: SudokuGrid):
+def test_get_minimum_domain_empty_cell(min_domain_cell: CellCoordinates, solved_sudoku: SudokuGrid):
     # Arrange
     solved_grid = solved_sudoku.get_inner_grid_copy()
 
@@ -108,7 +170,7 @@ def test_get_minimum_domain_cell(min_domain_cell: CellCoordinates, solved_sudoku
     )
 
     # Act
-    actual_min_domain_cell, domain = cp_grid.get_minimum_domain_cell()
+    actual_min_domain_cell, domain = cp_grid.get_minimum_domain_empty_cell()
 
     # Assert
     # Check that cell is the expected one and that
