@@ -66,7 +66,7 @@ class SimulatedAnnealingSudokuGrid(SudokuGrid):
         valid_neighbors = list(neighbors.difference(self._fixed_cells))
 
         # Extract one randomly
-        return valid_neighbors[np.random.randint(low=0, high=8+1)]
+        return valid_neighbors[np.random.randint(low=0, high=len(valid_neighbors))]
 
 
 @dataclass
