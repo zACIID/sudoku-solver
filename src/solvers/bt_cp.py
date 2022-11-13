@@ -12,13 +12,13 @@ from src.model.sudoku_base import SudokuGrid, CellCoordinates
 from src.model.sudoku_cp import ConstraintPropagationSudokuGrid
 
 
-def bt_cp_sudoku_solver(sudoku: SudokuGrid) -> SudokuGrid:
+def bt_cp_sudoku_solver(sudoku: SudokuGrid) -> SudokuGrid | None:
     """
     Solves the provided sudoku with the Back-tracking + Constraint Propagation approach.
-    Returns the solved sudoku grid.
+    Returns the solved sudoku grid, or None if no solution could be found.
 
     :param sudoku: sudoku grid to solve
-    :return: solved sudoku grid
+    :return: solved sudoku grid, or None if no solution found
     """
 
     def solver_aux(
@@ -80,6 +80,7 @@ def bt_cp_sudoku_solver(sudoku: SudokuGrid) -> SudokuGrid:
         logger.debug(f"Found solution:\n"
                      f"{solution}")
         return solution
-
-    # It should never get here: solution must be found before
-    assert False
+    else:
+        logger.debug(f"Couldn't find solution for grid:\n"
+                     f"{sudoku}")
+        return None
