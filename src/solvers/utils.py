@@ -1,6 +1,6 @@
 import numpy as np
 
-import src.sudoku as sud
+import src.model.sudoku_base as sud
 
 
 def is_solution_correct(solution: sud.SudokuGrid) -> bool:
@@ -44,6 +44,9 @@ def is_grid_valid(grid: sud.SudokuGrid) -> bool:
 
     return True
 
+
+# TODO function that returns the actual duplicates
+#   useful in simulated annealing to calculate cost function
 
 def check_no_repetitions(array: np.ndarray) -> bool:
     """

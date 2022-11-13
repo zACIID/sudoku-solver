@@ -7,8 +7,9 @@ from typing import Tuple, Set
 
 from loguru import logger
 
-import src.constraints as cn
-from src.sudoku import SudokuGrid, ConstraintPropagationSudokuGrid, CellCoordinates
+import src.solvers.utils as ut
+from src.model.sudoku_base import SudokuGrid, CellCoordinates
+from src.model.sudoku_cp import ConstraintPropagationSudokuGrid
 
 
 def bt_cp_sudoku_solver(sudoku: SudokuGrid) -> SudokuGrid:
@@ -27,7 +28,7 @@ def bt_cp_sudoku_solver(sudoku: SudokuGrid) -> SudokuGrid:
     ) -> Tuple[bool, ConstraintPropagationSudokuGrid]:
         # If None it means that all cells have been exhausted and the sudoku was solved
         if current_cell is None:
-            return cn.is_solution_correct(grid), grid
+            return ut.is_solution_correct(grid), grid
 
         if len(current_domain) == 0:
             # If the current cell has an empty domain return False
@@ -75,7 +76,7 @@ def bt_cp_sudoku_solver(sudoku: SudokuGrid) -> SudokuGrid:
         current_domain=starting_domain
     )
 
-    if cn.is_solution_correct(solution=solution) and solved:
+    if ut.is_solution_correct(solution=solution) and solved:
         logger.debug(f"Found solution:\n"
                      f"{solution}")
         return solution

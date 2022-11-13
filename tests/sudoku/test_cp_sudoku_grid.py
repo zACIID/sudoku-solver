@@ -3,7 +3,8 @@ from typing import Set
 import numpy as np
 import pytest
 
-from src.sudoku import SudokuGrid, ConstraintPropagationSudokuGrid, CellCoordinates, NotInDomainException
+from src.model.sudoku_base import SudokuGrid, CellCoordinates
+from src.model.sudoku_cp import ConstraintPropagationSudokuGrid, NotInDomainException
 
 
 @pytest.mark.parametrize("cell, value", [

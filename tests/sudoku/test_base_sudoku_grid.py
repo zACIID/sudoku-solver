@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from src.sudoku import SudokuGrid, CellCoordinates
+from src.model.sudoku_base import SudokuGrid, CellCoordinates
 
 
 @pytest.mark.parametrize("cell, value", [

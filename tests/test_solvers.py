@@ -1,7 +1,8 @@
 import pytest
 
-import src.bt_cp_solver as bt
-from src.sudoku import SudokuGrid, ConstraintPropagationSudokuGrid
+import src.solvers.bt_cp as bt
+from src.model.sudoku_base import SudokuGrid
+from src.model.sudoku_cp import ConstraintPropagationSudokuGrid
 
 
 @pytest.mark.bt_cp

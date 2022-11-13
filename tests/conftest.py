@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from src.sudoku import SudokuGrid
+from src.model.sudoku_base import SudokuGrid
 
 EMPTY_CELL = -777
 
