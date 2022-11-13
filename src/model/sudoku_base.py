@@ -18,31 +18,6 @@ class CellCoordinates:
     row: int
     col: int
 
-    def get_next(self) -> CellCoordinates | None:
-        """
-        Returns a SudokuCell instance that represents the next cell, relative to the current one.
-        If the current instance is the last cell of the grid, returns None.
-
-        :return: next cell instance, None if this is the last cell of the grid.
-        """
-
-        # Here next is determined as right-adjacent with respect to columns
-        # If the current cell is on the last column (col == 8), then move to
-        #   the first cell (col == 0) of the next row
-
-        # Last cell of the grid: return None
-        if self.col == 8 and self.row == 8:
-            return None
-
-        next_col = (self.col + 1) % 9
-
-        is_next_row = self.col + 1 == 9
-        next_row = self.row + 1 if is_next_row else self.row
-
-        return CellCoordinates(
-            row=next_row, col=next_col
-        )
-
     def __str__(self):
         return f"(row: {self.row}, col: {self.col})"
 
