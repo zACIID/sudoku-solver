@@ -5,6 +5,9 @@ import numpy as np
 import src.model.sudoku_base as sud
 
 
+LARGE_NUMBER = 2147483647
+
+
 def is_solution_correct(solution: sud.SudokuGrid) -> bool:
     """
     Checks if a sudoku solution is correct, which means that the provided
@@ -47,33 +50,6 @@ def is_grid_valid(grid: sud.SudokuGrid) -> bool:
     return True
 
 
-# TODO function that returns the actual duplicates
-#   useful in simulated annealing to calculate cost function
-
-def get_sudoku_duplicates(array: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Returns the duplicates in the provided array, along with their respective counts.
-    The array should be exactly of size 9, since it should represent either a
-    row, column or square of a sudoku grid, and hence should contain just
-    integer numbers from 1 to 9.
-
-    :param array: array with exactly 9 elements that represents either
-        a sudoku column, row or 3x3 box
-    :return: a pair of (duplicates, counts) arrays
-    """
-
-    assert array.flatten().size == 9, "The provided array should contain exactly 9 elements"
-
-    # Important is to check that duplicate elements are not 1 to 9 numbers
-    # Remember, in fact, that there could also be duplicate filler
-    #   values for empty cells
-    unique, counts = np.unique(array, return_counts=True)
-    duplicates = unique[counts > 1]
-    duplicate_counts = counts[counts > 1]
-
-    return duplicates, duplicate_counts
-
-
 def check_no_sudoku_duplicates(array: np.ndarray) -> bool:
     """
     Checks the provided array for no repetitions in the numbers between 1 and 9.
@@ -86,6 +62,23 @@ def check_no_sudoku_duplicates(array: np.ndarray) -> bool:
     :return: True if any number between 1 and 9 is contained exactly once
     """
 
-    duplicates, counts = get_sudoku_duplicates(array=array)
+    assert array.flatten().size == 9, "The provided array should contain exactly 9 elements"
+
+    duplicates, counts = get_duplicates(array=array)
 
     return not np.any(np.isin(duplicates, range(1, 9+1)))
+
+
+def get_duplicates(array: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Returns the duplicates in the provided array, along with their respective counts.
+
+    :param array: array to retrieve duplicates from
+    :return: a pair of (duplicates, counts) arrays
+    """
+
+    unique, counts = np.unique(array, return_counts=True)
+    duplicates = unique[counts > 1]
+    duplicate_counts = counts[counts > 1]
+
+    return duplicates, duplicate_counts
