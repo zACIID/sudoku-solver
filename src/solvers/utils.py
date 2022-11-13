@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import numpy as np
 
 import src.model.sudoku_base as sud
@@ -28,8 +30,8 @@ def is_grid_valid(grid: sud.SudokuGrid) -> bool:
 
     # Check Rows and Columns
     for i in range(0, 8+1):
-        valid &= check_no_repetitions(grid.get_row(i))
-        valid &= check_no_repetitions(grid.get_column(i))
+        valid &= check_no_sudoku_duplicates(grid.get_row(i))
+        valid &= check_no_sudoku_duplicates(grid.get_column(i))
 
         if not valid:
             return False
@@ -37,7 +39,7 @@ def is_grid_valid(grid: sud.SudokuGrid) -> bool:
     # Check all the nine 3x3 squares
     for i in range(0, 8+1, 3):
         for j in range(0, 8+1, 3):
-            if not check_no_repetitions(grid.get_square(
+            if not check_no_sudoku_duplicates(grid.get_square(
                 cell=sud.CellCoordinates(row=i, col=j)
             )):
                 return False
@@ -48,7 +50,31 @@ def is_grid_valid(grid: sud.SudokuGrid) -> bool:
 # TODO function that returns the actual duplicates
 #   useful in simulated annealing to calculate cost function
 
-def check_no_repetitions(array: np.ndarray) -> bool:
+def get_sudoku_duplicates(array: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Returns the duplicates in the provided array, along with their respective counts.
+    The array should be exactly of size 9, since it should represent either a
+    row, column or square of a sudoku grid, and hence should contain just
+    integer numbers from 1 to 9.
+
+    :param array: array with exactly 9 elements that represents either
+        a sudoku column, row or 3x3 box
+    :return: a pair of (duplicates, counts) arrays
+    """
+
+    assert array.flatten().size == 9, "The provided array should contain exactly 9 elements"
+
+    # Important is to check that duplicate elements are not 1 to 9 numbers
+    # Remember, in fact, that there could also be duplicate filler
+    #   values for empty cells
+    unique, counts = np.unique(array, return_counts=True)
+    duplicates = unique[counts > 1]
+    duplicate_counts = counts[counts > 1]
+
+    return duplicates, duplicate_counts
+
+
+def check_no_sudoku_duplicates(array: np.ndarray) -> bool:
     """
     Checks the provided array for no repetitions in the numbers between 1 and 9.
     This means that both an incomplete or complete sudoku column/row/box can be valid,
@@ -60,12 +86,6 @@ def check_no_repetitions(array: np.ndarray) -> bool:
     :return: True if any number between 1 and 9 is contained exactly once
     """
 
-    assert array.size == 9, "The provided array has to be exactly of length 9"
-
-    # Important is to check that duplicate elements are not 1 to 9 numbers
-    # Remember, in fact, that there could also be duplicate filler
-    #   values for empty cells
-    unique, counts = np.unique(array, return_counts=True)
-    duplicates = unique[counts > 1]
+    duplicates, counts = get_sudoku_duplicates(array=array)
 
     return not np.any(np.isin(duplicates, range(1, 9+1)))
