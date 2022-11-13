@@ -1,6 +1,8 @@
 """
 Sudoku solver based on Simulated Annealing
 """
+from __future__ import annotations
+
 from typing import Callable, Dict
 
 import numpy as np
@@ -14,7 +16,7 @@ from src.model.sudoku_annealing import SimulatedAnnealingSudokuGrid, SimulatedAn
 def simulated_annealing_solver(
         sudoku: SudokuGrid,
         starting_temp: float = 100,
-        t_step: float = 0.005,
+        temp_step: float = 0.005,
         scoring_function: Callable[[SudokuGrid], float] = None
 ) -> SudokuGrid | None:
     """
@@ -23,7 +25,7 @@ def simulated_annealing_solver(
 
     :param sudoku: sudoku grid to solve
     :param starting_temp: starting temperature value used in the annealing approach
-    :param t_step: value that the temperature decreases by after each "epoch"
+    :param temp_step: value that the temperature decreases by after each "epoch"
         of the algorithm (i.e. each time a cell is set)
         (TODO also step at which temp increases in case the algo is stuck?)
     :param scoring_function: scoring function to execute the annealing procedure with.
@@ -88,6 +90,8 @@ def simulated_annealing_solver(
             if current_state.score == 0:
                 solution = current_state.grid
                 break
+
+        current_temperature -= temp_step
 
     if solution is not None and ut.is_solution_correct(solution=solution):
         logger.debug(f"Found solution:\n"
