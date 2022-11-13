@@ -17,7 +17,7 @@ def test_bt_solver(sudoku_grid: SudokuGrid):
 
 
 @pytest.mark.annealing
-def test_bt_solver(sudoku_grid: SudokuGrid):
+def test_annealing_solver(sudoku_grid: SudokuGrid):
     ann_grid = SimulatedAnnealingSudokuGrid.from_sudoku_grid(grid=sudoku_grid)
 
     solution = ann.simulated_annealing_solver(sudoku=ann_grid)
