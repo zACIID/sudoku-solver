@@ -40,10 +40,10 @@ def is_grid_valid(grid: sud.SudokuGrid) -> bool:
             return False
 
     # Check all the nine 3x3 squares
-    for i in range(0, 8+1, 3):
-        for j in range(0, 8+1, 3):
+    for i in range(0, 2+1):
+        for j in range(0, 2+1):
             if not check_no_sudoku_duplicates(grid.get_square(
-                cell=sud.CellCoordinates(row=i, col=j)
+                cell=sud.CellCoordinates(row=i*3, col=j*3)
             )):
                 return False
 
