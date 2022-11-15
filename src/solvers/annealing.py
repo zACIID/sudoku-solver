@@ -103,9 +103,9 @@ def simulated_annealing_solver(
         # If stuck in the same state for some time, increase temperature again to get out
         prev_state, prev_counter = prev_state_counter
         stuckness_multiplier = prev_counter / (250 / 2)  # Multiplier+1 every 250 times the score doesn't change
-        epoch_multiplier = min((1 - (epoch / params.max_epochs)), 0.05)  # Temp reset is lower the more the algo runs
+        epoch_multiplier = max((1 - (epoch / params.max_epochs)), 0.05)  # Temp reset is lower the more the algo runs
         if prev_counter % 50 == 0 and prev_counter != 0:
-            current_state.temperature = max(
+            current_state.temperature = min(
                 params.starting_temp * epoch_multiplier * stuckness_multiplier,
                 params.starting_temp
             )
