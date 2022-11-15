@@ -2,15 +2,25 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Set, Callable
+from typing import Set, Tuple
 
 import numpy as np
 
+import src.solvers.utils as ut
 from src.model.sudoku_base import SudokuGrid, CellCoordinates
 
 
+# TODO do this again by using the other strategy:
+#   rows contain the correct values, and the random neighbor step consists
+#   in swapping two random positions of a random row
+#   cost function is simply the number of duplicates of cols + squares
+#   Note: useful link: https://www.adrian.idv.hk/2019-01-30-simanneal/
+#       at section "Parameter estimation" is written how to set the optimal
+#       temperature, which could be useful for the report
+
+
 class SimulatedAnnealingSudokuGrid(SudokuGrid):
-    _fixed_cells: Set[CellCoordinates]
+    starting_cells: Set[CellCoordinates]
     """
     Set containing all the cells that are non-empty at the start.
     Such cells cannot be randomly extracted during the simulated
@@ -23,11 +33,30 @@ class SimulatedAnnealingSudokuGrid(SudokuGrid):
             empty_cell_marker=empty_cell_marker
         )
 
-        self._fixed_cells = set()
+        self.starting_cells = set()
         for row in range(0, 8+1):
             for col in range(0, 8+1):
+                current_cell = CellCoordinates(row=row, col=col)
                 if starting_grid[row, col] != empty_cell_marker:
-                    self._fixed_cells.add(CellCoordinates(row=row, col=col))
+                    self.starting_cells.add(current_cell)
+
+        self._initialize_rows_as_unique()
+
+    def _initialize_rows_as_unique(self):
+        """
+        Fill all the empty cells in such a way that each row contains exactly one occurrence
+        of each valid sudoku number (1 to 9)
+        """
+
+        all_sudoku_numbers = set(range(1, 9+1))
+        for row in range(0, 8+1):
+            remaining_numbers = all_sudoku_numbers.difference(set(self.get_row(i=row)))
+
+            for col in range(0, 8+1):
+                current_cell = CellCoordinates(row=row, col=col)
+                if self.get_value(current_cell) == self.empty_cell_marker:
+                    to_set = remaining_numbers.pop()
+                    self.set_value(current_cell, val=to_set)
 
     @staticmethod
     def from_sudoku_grid(grid: SudokuGrid) -> SimulatedAnnealingSudokuGrid:
@@ -44,65 +73,92 @@ class SimulatedAnnealingSudokuGrid(SudokuGrid):
             empty_cell_marker=grid.empty_cell_marker
         )
 
-    def get_random_neighbor(self, cell: CellCoordinates) -> CellCoordinates:
-        # Neighbors are retrieved from the 3x3 square adjacent to the provided cell
-        # Such a square is allowed to "overflow" in case the cell is an edge cell
-        neighbors: Set[CellCoordinates] = {
-            # Row above
-            CellCoordinates(row=(cell.row - 1) % 9, col=(cell.col - 1) % 9),
-            CellCoordinates(row=(cell.row - 1) % 9, col=cell.col),
-            CellCoordinates(row=(cell.row - 1) % 9, col=(cell.col + 1) % 9),
-            # Same row
-            CellCoordinates(row=cell.row, col=(cell.col - 1) % 9),
-            CellCoordinates(row=cell.row, col=cell.col),
-            CellCoordinates(row=cell.row, col=(cell.col + 1) % 9),
-            # Col below
-            CellCoordinates(row=(cell.row + 1) % 9, col=(cell.col - 1) % 9),
-            CellCoordinates(row=(cell.row + 1) % 9, col=cell.col),
-            CellCoordinates(row=(cell.row + 1) % 9, col=(cell.col + 1) % 9),
-        }
+    def swap_two_cells_same_row(self):
+        cell_1, cell_2 = self._get_random_row_neighbors()
+        val_1, val_2 = self.get_value(cell_1), self.get_value(cell_2)
 
-        # Neighbors can't be cells from the starting grid
-        valid_neighbors = list(neighbors.difference(self._fixed_cells))
+        self.set_value(cell_1, val_2)
+        self.set_value(cell_2, val_1)
 
-        # Extract one randomly
-        return valid_neighbors[np.random.randint(low=0, high=len(valid_neighbors))]
+    def _get_random_row_neighbors(self) -> Tuple[CellCoordinates, CellCoordinates]:
+        # Keep cycling until one suitable row is found
+        # (one where there are two or more non-starting cells)
+        valid_neighbors = None
+        while valid_neighbors is None:
+            rnd_row_idx = np.random.randint(0, 8+1)
+            row_neighbors: Set[CellCoordinates] = {
+                CellCoordinates(row=rnd_row_idx, col=i)
+                for i in range(0, 8+1)
+            }
+            valid_neighbors = row_neighbors.difference(self.starting_cells)
+
+            if len(valid_neighbors) < 2:
+                valid_neighbors = None
+
+        valid_neighbors = list(valid_neighbors)
+        rnd_idxs = np.random.random_integers(low=0, high=len(valid_neighbors)-1, size=2)
+        try:
+            neighbor_1 = valid_neighbors[rnd_idxs[0]]
+            neighbor_2 = valid_neighbors[rnd_idxs[1]]
+        except IndexError as ex:
+            raise ex
+
+        return neighbor_1, neighbor_2
+
+    def get_score(self) -> float:
+        def get_collection_score(collection: np.ndarray) -> float:
+            duplicates, counts = ut.get_duplicates(collection)
+            duplicates_sum = int(np.sum(counts)) if len(counts) > 0 else 0
+
+            return duplicates_sum
+
+        tot_score = 0
+        for i in range(0, 8+1):
+            col_score = get_collection_score(self.get_column(i))
+            row_score = get_collection_score(self.get_row(i))
+
+            tot_score += col_score + row_score
+
+        for i in range(0, 2+1):
+            for j in range(0, 2+1):
+                top_left_cell = CellCoordinates(row=i*3, col=j*3)
+                square_score = get_collection_score(self.get_square(top_left_cell))
+
+                tot_score += square_score
+
+        return tot_score
 
 
 @dataclass
 class SimulatedAnnealingState:
     """
     Class that represents the state of an independent Simulated Annealing
-    solving run. This means that the class defines its own grid,
-    scoring function and current cell.
+    solving run
     """
 
-    current_cell: CellCoordinates
+    temperature: float
     grid: SimulatedAnnealingSudokuGrid
-    scoring_function: Callable[[SudokuGrid], float]
+    _score: float = ut.LARGE_NUMBER
 
     def __str__(self):
-        return (f"Current cell: {self.current_cell}\n"
+        return (f"Score: {self.score}\n"
                 f"Grid:\n"
                 f"{self.grid}")
 
     @property
     def score(self) -> float:
-        return self.scoring_function(self.grid)
+        if self._score == ut.LARGE_NUMBER:
+            self._score = self.grid.get_score()
 
-    def update(self, next_cell: CellCoordinates, guess: int):
+        return self._score
+
+    def get_next(self) -> SimulatedAnnealingState:
         # Important to copy, else the state pre- and post- update
         #   is virtually the same
         new_grid = deepcopy(self.grid)
-        new_grid.set_value(cell=next_cell, val=guess)
+        new_grid.swap_two_cells_same_row()
 
         return SimulatedAnnealingState(
-            current_cell=next_cell,
-            grid=new_grid,
-            scoring_function=self.scoring_function
+            temperature=self.temperature,
+            grid=new_grid
         )
-
-    # TODO do I need to keep track of # of bounces back and forth?
-    #   might be useful to understand if I am stuck, in which case
-    #   temperature should be increased by just the right amount
-    #   to get out of the local optimum
