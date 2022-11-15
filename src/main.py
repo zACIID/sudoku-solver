@@ -36,7 +36,7 @@ def solve_sudoku(grid: np.ndarray, strategy: SolverStrategy) -> SudokuGrid | Non
             sudoku=sudoku_grid,
             params=SimulatedAnnealingParams(
                 starting_temp=3,
-                temp_decrease_rate=0.9995,
+                temp_decrease_rate=0.95,
                 max_epochs=3000000
             )
         )

@@ -49,7 +49,7 @@ def simulated_annealing_solver(
     if params is None:
         params = SimulatedAnnealingParams(
             starting_temp=3,
-            temp_decrease_rate=0.9995,
+            temp_decrease_rate=0.95,
             max_epochs=1000000
         )
 
@@ -105,7 +105,10 @@ def simulated_annealing_solver(
         stuckness_multiplier = prev_counter / (250 / 2)  # Multiplier+1 every 250 times the score doesn't change
         epoch_multiplier = max((1 - (epoch / params.max_epochs)), 0.05)  # Temp reset is lower the more the algo runs
         if prev_counter % 50 == 0 and prev_counter != 0:
-            current_state.temperature = params.starting_temp * epoch_multiplier * stuckness_multiplier
+            current_state.temperature = max(
+                params.starting_temp * epoch_multiplier * stuckness_multiplier,
+                params.starting_temp
+            )
 
         epoch += 1
 
