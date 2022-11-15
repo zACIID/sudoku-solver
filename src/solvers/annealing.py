@@ -33,7 +33,6 @@ class SimulatedAnnealingParams:
     """
 
 
-
 def simulated_annealing_solver(
         sudoku: SudokuGrid,
         params: SimulatedAnnealingParams = None
@@ -103,10 +102,11 @@ def simulated_annealing_solver(
 
         # If stuck in the same state for some time, increase temperature again to get out
         prev_state, prev_counter = prev_state_counter
-        if prev_counter == 75:
-            logger.debug("Increasing temp again")
-            current_state.temperature = params.starting_temp * max((1 - (epoch / params.max_epochs)), 0.05)
-            prev_state_counter = (current_state, 0)
+        stuckness_multiplier = prev_counter / (250 / 2)  # Double temp every 250 times the score doesn't change
+        epoch_multiplier = max((1 - (epoch / params.max_epochs)), 0.05)  # Temp reset is lower the more the algo runs
+        if prev_counter % 50 == 0 and prev_counter != 0:
+            current_state.temperature = params.starting_temp * epoch_multiplier * stuckness_multiplier
+            # prev_state_counter = (current_state, 0) TODO remove?
 
         epoch += 1
 
@@ -119,7 +119,6 @@ def simulated_annealing_solver(
         logger.debug(f"Found solution at epoch {epoch}:\n"
                      f"{solution}")
         return solution
-    else:
-        logger.debug(f"Found solution, but incorrect:\n"
-                     f"{sudoku}")
-        raise AssertionError("Should never get here")
+
+    assert False, (f"Found solution, but incorrect. Should never get here:\n"
+                   f"{sudoku}")
