@@ -10,16 +10,17 @@ import src.solvers.utils as ut
 from src.model.sudoku_base import SudokuGrid, CellCoordinates
 
 
-# TODO do this again by using the other strategy:
-#   rows contain the correct values, and the random neighbor step consists
-#   in swapping two random positions of a random row
-#   cost function is simply the number of duplicates of cols + squares
-#   Note: useful link: https://www.adrian.idv.hk/2019-01-30-simanneal/
-#       at section "Parameter estimation" is written how to set the optimal
-#       temperature, which could be useful for the report
+# Note: useful link: https://www.adrian.idv.hk/2019-01-30-simanneal/
+#   at section "Parameter estimation" is written how to set the optimal
+#   temperature, which could be useful for the report
 
 
 class SimulatedAnnealingSudokuGrid(SudokuGrid):
+    """
+    Class that defines a sudoku grid that provides functionality useful
+    to solve the sudoku problem with the simulated annealing approach.
+    """
+
     starting_cells: Set[CellCoordinates]
     """
     Set containing all the cells that are non-empty at the start.
@@ -73,14 +74,28 @@ class SimulatedAnnealingSudokuGrid(SudokuGrid):
             empty_cell_marker=grid.empty_cell_marker
         )
 
-    def swap_two_cells_same_row(self):
+    def swap_two_cells_same_row(self) -> Tuple[CellCoordinates, CellCoordinates]:
+        """
+        Swaps two cells that belong to the same row.
+
+        :return: coordinates of the two swapped cells
+        """
+
         cell_1, cell_2 = self._get_random_row_neighbors()
         val_1, val_2 = self.get_value(cell_1), self.get_value(cell_2)
 
         self.set_value(cell_1, val_2)
         self.set_value(cell_2, val_1)
 
+        return cell_1, cell_2
+
     def _get_random_row_neighbors(self) -> Tuple[CellCoordinates, CellCoordinates]:
+        """
+        Returns a random pair of cells that belong to the same row.
+
+        :return:  random pair of cells that belong to the same row
+        """
+
         # Keep cycling until one suitable row is found
         # (one where there are two or more non-starting cells)
         valid_neighbors = None
@@ -105,6 +120,11 @@ class SimulatedAnnealingSudokuGrid(SudokuGrid):
         return neighbor_1, neighbor_2
 
     def get_score(self) -> float:
+        """
+        Returns the score associated to the grid, also called `energy` in the simulated annealing context.
+        :return: score (energy) of the current grid
+        """
+
         def get_collection_score(collection: np.ndarray) -> float:
             duplicates, counts = ut.get_duplicates(collection)
             duplicates_sum = int(np.sum(counts)) if len(counts) > 0 else 0
@@ -114,9 +134,8 @@ class SimulatedAnnealingSudokuGrid(SudokuGrid):
         tot_score = 0
         for i in range(0, 8+1):
             col_score = get_collection_score(self.get_column(i))
-            row_score = get_collection_score(self.get_row(i))
 
-            tot_score += col_score + row_score
+            tot_score += col_score
 
         for i in range(0, 2+1):
             for j in range(0, 2+1):

@@ -42,7 +42,7 @@ def simulated_annealing_solver(
     Returns the solved sudoku grid, or None if no solution could be found.
 
     :param sudoku: sudoku grid to solve
-    :param params: TODO
+    :param params: simulated annealing params
     :return: solved sudoku grid, or None if no solution found
     """
 
