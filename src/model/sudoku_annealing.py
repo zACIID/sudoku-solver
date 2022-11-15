@@ -96,12 +96,11 @@ class SimulatedAnnealingSudokuGrid(SudokuGrid):
                 valid_neighbors = None
 
         valid_neighbors = list(valid_neighbors)
+
+        # TODO if I use np.random.randint() it finds a solution in 20x the time for some reason
         rnd_idxs = np.random.random_integers(low=0, high=len(valid_neighbors)-1, size=2)
-        try:
-            neighbor_1 = valid_neighbors[rnd_idxs[0]]
-            neighbor_2 = valid_neighbors[rnd_idxs[1]]
-        except IndexError as ex:
-            raise ex
+        neighbor_1 = valid_neighbors[rnd_idxs[0]]
+        neighbor_2 = valid_neighbors[rnd_idxs[1]]
 
         return neighbor_1, neighbor_2
 
