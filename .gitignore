@@ -217,5 +217,5 @@ cython_debug/
 .DS_Store
 .idea/
 
-# Sudoku grids folder
-sudokus/
+sudokus/*
+!sudokus/example1.txt
