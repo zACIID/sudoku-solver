@@ -1,0 +1,43 @@
+\chapter{Notes}
+
+\section{Constraint Propagation}
+
+\begin{itemize}
+    \item Per prima cosa parlare della teoria del Constraint Propagation, in particolare:
+    \begin{itemize}
+        \item (intro1) in cosa consiste (utilizzare dei vincoli definiti per ridurre il set di mosse possibili, e dunque lo spazio di ricerca da esplorare)
+        \item (intro2) il fatto che sia una buona tecnica da applicare al sudoku, in quanto...
+        \item definizioni formali (dominio, vincolo)
+        \item come entra in gioco il backtracking? devo spiegare anche quello ma non so a che punto inserirlo
+    \end{itemize}
+    \item parlare della mia implementazione
+    \begin{itemize}
+        \item come calcolo il dominio
+        \item il fatto che ordino le celle partendo da quelle col dominio minimo
+    \end{itemize}
+\end{itemize}
+
+\section{Simulated Annealing}
+
+\begin{itemize}
+    \item Per prima cosa parlare della teoria del simulated annealing, in particolare:
+    \begin{itemize}
+        \item perché si chiama così (da dove deriva il nome)
+        \item in cosa consiste (intuizione: si va a tentativi finché si trova la strada giusta, se si rimane incastrati si "sale")
+        \item il fatto che non sia una procedura indicata per il sudoku, o che quantomeno ne esistono di migliori, tipo CP
+    \end{itemize}
+    \item parlare della mia implementazione
+    \begin{itemize}
+        \item il fatto che prima ho provato a mettere numeri a caso e basta
+        \item il fatto che poi ho migliorato settando già le righe con i numeri giusti, pur ottenendo risultati scarsi
+        \item come definisco la funzione punteggio in entrambi i casi
+        \item come setto la temperatura (discorso del link che partenza deve permettere p >= 80\% e che poi scende)
+        \item come resetto la temeperatura in caso mi incastro (coeff1 scende in base al tempo, coeff2 sale in base alla stuckness, temperatura no reset più alto di valore iniziale)
+    \end{itemize}
+\end{itemize}
+
+\section{Conclusions}
+
+Dire che CP è meglio di SimAnn perché sudoku è un problema dai constraint definiti e facilmente implementabili.
+SimAnn, invece, per definizione è un metodo che va a tentativi, e in un problema come il sudoku in cui le combinazioni totali
+sono molte, e quelle valide ben poche, non è efficace.
