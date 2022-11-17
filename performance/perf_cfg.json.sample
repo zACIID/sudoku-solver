@@ -1,0 +1,16 @@
+{
+  "queries": [
+    {
+      // Path to sudoku file
+      "sudoku_path": "sudokus/example1.txt",
+
+      // Type of strategy to use to solve sudoku
+      // Values are the same as the ones accepted in the src/main.py script
+      "strategy": "cp"
+    },
+    {
+      "sudoku_path": "sudokus/example1.txt",
+      "strategy": "sim_ann"
+    }
+  ]
+}
