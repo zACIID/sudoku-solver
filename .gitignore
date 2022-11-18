@@ -219,3 +219,5 @@ cython_debug/
 
 sudokus/*
 !sudokus/example1.txt
+performance/*
+!performance/runner_config.json.sample
