@@ -1,0 +1,27 @@
+\documentclass[12pt]{report}
+
+% style settings
+\input{assignment-1/utils/settings}
+
+\begin{document}
+
+\input{chapters/title_page}
+
+\tableofcontents
+
+\afterpage{\blankpage}
+
+\include{assignment-1/chapters/0-introduction.tex}
+\include{assignment-1/chapters/1-sudoku-rules.tex}
+\include{assignment-1/chapters/2-constraint-propagation.tex}
+\include{assignment-1/chapters/3-simulated-annealing.tex}
+\include{assignment-1/chapters/conclusions}
+
+\fontsize{4.5mm}{4.5mm}\selectfont
+
+%\bibliographystyle{unsrt}
+%\bibliography{utils/ref}
+
+\listoffigures
+
+\end{document}
