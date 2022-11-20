@@ -11,9 +11,7 @@ Naturally, constraint programming problems have more than one constraint, and, t
 
 \subsection{Constraint Satisfaction}
 
-Currently there can be seen two branches of Constraint Programming research which arise from distinct bases and, thus, use different approaches to solve constraints. Constraint Satisfaction is one of the two branches, the other being Constraint Solving. For the purposes of this report, the focus will be on the former.
-
-Constraint Programming divides in two branches, namely \textit{Constraint Satisfaction} and \textit{Constraint Solving}, which use different approaches to solve constraints. For the purposes of this report, the focus will be on the former, and specifically on \textit{Constraint Satisfaction Problems (CSPs)}
+Constraint Programming divides into two branches, namely \textit{Constraint Satisfaction} and \textit{Constraint Solving}, which use different approaches to solve constraints. For the purposes of this report, the focus will be on the former, and specifically on \textit{Constraint Satisfaction Problems (CSPs)}
 
 \paragraph{Constraint Satisfaction Problem (CSP)} A Constraint Satisfaction Problem (CSP) is defined mainly in three terms:
 
@@ -43,18 +41,17 @@ For the purposes of this assignment, the most interesting techniques to delve in
 
 \paragraph{Node Consistency} The node representing a variable $X$ in a constraint graph is \textit{node consistent} if and only if for every value V in the current domain $D_X$ of $X$, each unary (meaning that it concerns only that variable) constraint on $X$ is satisfied.
 
-\paragraph{Arc Consistency} An arc $(V_i, V_j)$ is \textit{arc consistent} if and only if, for every value $x$ in the current domain of $V_i$ which satisfies the constraints on $V_i$ there is some value $y$ in the domain of $V_j$ such that $V_i = x$ and $V_j = y$ is
-permitted by the binary constraint between $V_i$ and $V_j$.
+\paragraph{Arc Consistency} An arc $(V_i, V_j)$ is \textit{arc consistent} if and only if, for every value $x$ in the current domain of $V_i$ which satisfies the constraints on $V_i$ there is some value $y$ in the domain of $V_j$ such that $V_i = x$ and $V_j = y$ is permitted by the binary constraint between $V_i$ and $V_j$.
 
 \subsection{Constraint Propagation}
 
 By integrating systematic search algorithms with consistency techniques, it is possible to get more efficient constraint satisfaction algorithms. 
-Therefore, a third possible schema was introduced that embeds a consistency algorithm inside a search algorithm. Such schemas are usually called look-ahead strategies and they are based on idea of reducing the search space through constraint propagation.
+Therefore, a third possible schema was introduced that embeds a consistency algorithm inside a search algorithm. Such schemata are usually called look-ahead strategies and they are based on idea of reducing the search space through constraint propagation.
 \par
 Simple backtracking (BT) already performs some kind of consistency technique, which can be summarized as arc consistency checks between a newly instantiated (or updated) variable and already instantiated ones. As mentioned before, however, the inconsistency is detected late, at the last moment, highlighting the fact that there is a lot of room for search space reduction.
 \par
 \textbf{Forward checking} is the easiest way to achieve such a feat. The forward checking algorithm is based on the idea that future assignments cannot conflict with current ones. 
-Arc consistency checks are performed between pairs of a not-yet instantiated variable and an instantiated one, as opposed to the simple BT algorithm that considers only pairs of already instantiated variables. Therefore, the invariance that \textit{for every un-instantiated variable there exists at least one value in its domain which is compatible with the values of instantiated variables} is maintained. Consequently, forward checking allows branches of the search tree that will lead to a failure to be pruned earlier than with backtracking.
+Arc consistency checks are performed between pairs of a not-yet instantiated variable and an instantiated one, as opposed to the simple BT algorithm that considers only pairs of already instantiated variables. Therefore, the invariant that \textit{for every un-instantiated variable there exists at least one value in its domain which is compatible with the values of instantiated variables} is maintained. Consequently, forward checking allows branches of the search tree that will lead to a failure to be pruned earlier than with backtracking.
 
 \subsection{Ordering}
 
@@ -105,7 +102,7 @@ Additionally, this class serves as super-type for some more specific implementat
 \subsection{Main Function}
 
 This part is the actual implementation of the Backtracking Sudoku-solving function. The main idea is of course to try to assign some value to some cell and then move on to the next; if a dead end is reached, the algorithm retraces back to the first cell with available assignments and tries again to move forward. 
-As regards to this particular implementation, which makes use of \textit{Constraint Propagation}, the main steps of the algorithm are the following:
+As regards to this particular implementation, which makes use of \textit{Constraint Propagation}, the main parts of the algorithm are the following:
 
 \begin{enumerate}
     \item \textbf{Choice of the Cell to Examine}: each iteration of the algorithm examines the most constrained cell at that point, that is, the cell whose domain is the smallest; this dynamic ordering of the variables was chosen because of the intuition that at least one value in each domain must be the correct one, so it's better to start from the cells with the fewest choices.
@@ -124,7 +121,7 @@ As regards to this particular implementation, which makes use of \textit{Constra
 
 \subsection{Forward Checking and Domain Updates}
 
-The actual \textit{Constraint Propagation} aspect of this solver is implemented through a form of \textit{Forward Checking}: after each assignment to some cell $C$, which can be both the action of setting a set to a new value and the action of emptying the cell, all the cells affected by it, that is, the cells that share the same row, column or box of $C$, have their domain updated to reflect only the values that can be assigned to them, in the future, without violating any constraint.
+The actual \textit{Constraint Propagation} aspect of this solver is implemented through a form of \textit{Forward Checking}: after each assignment to some cell $C$, which can be both the action of setting it to a new value and the action of emptying it, all the cells affected by such an assignment, that is, the cells that share the same row, column or box of $C$, have their domain updated to reflect only the values that can be assigned to them, in the future, without violating any constraint.
 \par
 More implementative details are discussed in the following sub-sections.
 
