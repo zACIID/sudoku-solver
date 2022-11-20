@@ -30,26 +30,18 @@ def bt_cp_sudoku_solver(sudoku: SudokuGrid) -> SudokuGrid | None:
         if current_cell is None:
             return ut.is_solution_correct(grid), grid
 
-        if len(current_domain) == 0:
-            # If the current cell has an empty domain return False
-            #   because it can't happen unless the grid is wrong
-            return False, grid
-
         # This should never happen because only empty cells should be fed to the solver
         assert grid.get_value(cell=current_cell) == grid.empty_cell_marker, "Cell should be empty"
 
-        logger.debug(f"Attempting cell {current_cell}. Domain: {current_domain}")
-        logger.debug(f"Current Grid:\n"
-                     f"{grid}")
+        if len(current_domain) == 0:
+            # Empty domain means the solver reached a dead end, hence return False
+            return False, grid
 
         for attempt in current_domain:
             # Allow current cell to be overwritten
             grid.set_value(cell=current_cell, val=attempt, overwrite=False)
 
             # Go to the next cell after having tried with the current attempt
-            # Note: the next cell and its domain are recalculated every time
-            #   a new attempt is made, because such an action affects the
-            #   domains of other cells
             next_cell, next_domain = grid.get_minimum_domain_empty_cell()
             solved, solution = solver_aux(
                 grid=grid,
@@ -61,7 +53,6 @@ def bt_cp_sudoku_solver(sudoku: SudokuGrid) -> SudokuGrid | None:
                 return True, solution
 
         # If no solution found at current cell, set as empty again and go back
-        logger.debug(f"Attempts for cell {current_cell} exhausted, returning...")
         grid.empty_cell(cell=current_cell)
         return False, grid
 

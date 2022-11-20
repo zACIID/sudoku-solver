@@ -120,8 +120,7 @@ class ConstraintPropagationSudokuGrid(SudokuGrid):
             overwrite=overwrite
         )
 
-        #self._recalculate_affected_domains(cell_to_update=cell)
-        self._remove_from_affected_domains(val=val, cell_to_update=cell) # TODO old
+        self._remove_from_affected_domains(val=val, cell_to_update=cell)
 
     def empty_cell(self, cell: CellCoordinates):
         previous_value = self.get_value(cell)
@@ -165,23 +164,8 @@ class ConstraintPropagationSudokuGrid(SudokuGrid):
     def _remove_from_affected_domains(self, val: int, cell_to_update: CellCoordinates):
         affected_cells = self._get_affected_cells(cell_to_update=cell_to_update)
         for c in affected_cells:
-            try:
-                # Note: it is possible that not all the affected cells contain
-                #   such a value in their domain
-                if val in self._cell_domains[c]:
-                    self._cell_domains[c].remove(val)
-
-                # TODO discard should be the preferred method instead of if+set,
-                #   but it somehow causes seg-fault in debugger???
-                # self._cell_domains[c].discard(val)
-
-            except KeyError:  # TODO debug remove
-                raise NotInDomainException(
-                    cell=c,
-                    actual_domain=self._cell_domains[c],
-                    value=val,
-                    grid=self._inner_grid
-                )
+            if val in self._cell_domains[c]:
+                self._cell_domains[c].remove(val)
 
     def _recalculate_affected_domains(self, cell_to_update: CellCoordinates):
         affected_cells = self._get_affected_cells(cell_to_update=cell_to_update)
@@ -209,7 +193,6 @@ class ConstraintPropagationSudokuGrid(SudokuGrid):
         """
 
         # Get empty cells
-        # TODO fix type hinting
         empty_cells = list(
             filter(
                 lambda kv_pair: self.get_value(kv_pair[0]) == self.empty_cell_marker,
@@ -224,29 +207,3 @@ class ConstraintPropagationSudokuGrid(SudokuGrid):
         min_cell, min_domain = min(empty_cells, key=lambda kv_pair: len(kv_pair[1]))
 
         return min_cell, copy(min_domain)
-
-    def get_maximum_domain_empty_cell(self) -> Tuple[CellCoordinates, Set[int]] | Tuple[None, None]:
-        """
-        Returns the coordinates of the empty cell with the maximum (biggest) domain,
-        along with said domain.
-
-        :return: cell with biggest non-empty domain and its domain,
-            or the pair (None, None) if there are no empty cells left
-        """
-
-        # Get empty cells
-        # TODO fix type hinting
-        empty_cells: List[Tuple[CellCoordinates, Set[int]]] = list(
-            filter(
-                lambda kv_pair: self.get_value(kv_pair[0]) == self.empty_cell_marker,
-                self._cell_domains.items()
-            )
-        )
-
-        if len(empty_cells) == 0:
-            return None, None
-
-        # Get the empty cell with the smallest domain
-        max_cell, max_domain = max(empty_cells, key=lambda kv_pair: len(kv_pair[1]))
-
-        return max_cell, copy(max_domain)
