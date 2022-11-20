@@ -65,27 +65,23 @@ def simulated_annealing_solver(
     epoch = 0
     while solution is None and epoch <= params.max_epochs:
         new_state = current_state.get_next()
-
-        if epoch % 5000 == 0:
-            logger.debug(f"[Epoch #{epoch}] Temperature: {current_state.temperature}")
-            logger.debug(f"Current state:\n"
-                         f"{current_state}")
-            logger.debug(f"Candidate state:\n"
-                         f"{new_state}")
-            logger.debug("--------------------------------------")
-
         score_delta = new_state.score - current_state.score
         if score_delta <= 0:  # new state is better
             current_state = new_state
         else:  # old state is better (delta > 0)
-            # The right side of the inequality gets closer to 0 the lower the temperature,
-            #   meaning that the worse state is increasingly less likely to get chosen
-            #   the more the temperature decreases
+            # The right side of the inequality gets closer to 0 the lower the temperature
             if np.random.rand() < 10 ** (-score_delta / current_state.temperature):
                 current_state = new_state
 
-        # If current score (state) equals previous score (state),
-        #   increase counter by 1
+        # Terminate if solution found (score == 0)
+        if current_state.score == 0:
+            solution = current_state.grid
+            break
+
+        current_state.temperature *= params.temp_decrease_rate
+        epoch += 1
+
+        # If current score (state) equals previous score (state), increase counter by 1
         # Counter is needed to understand when the algorithm gets stuck
         prev_state, prev_counter = prev_state_counter
         if current_state.score == prev_state.score:
@@ -93,25 +89,18 @@ def simulated_annealing_solver(
         else:
             prev_state_counter = (current_state, 0)
 
-        current_state.temperature *= params.temp_decrease_rate
-
-        # Terminate if solution found (score == 0)
-        if current_state.score == 0:
-            solution = current_state.grid
-            break
-
         # If stuck in the same state for some time, increase temperature again to get out
         prev_state, prev_counter = prev_state_counter
-        stuckness_threshold = 250  # Multiplier+1 every 250 times the score doesn't change
+        stuckness_threshold = 100  # Multiplier+1 every 250 times the score doesn't change
         stuckness_multiplier = prev_counter / (stuckness_threshold / 2)
-        epoch_multiplier = max((1 - (epoch / params.max_epochs)), 0.05)  # Temp reset is lower the more the algo runs
+
+        # Temp reset is lower the more time passes
+        epoch_multiplier = max((1 - (epoch / params.max_epochs)), 0.01)
         if prev_counter > stuckness_threshold:
             current_state.temperature = min(
                 params.starting_temp * epoch_multiplier * stuckness_multiplier,
                 params.starting_temp
             )
-
-        epoch += 1
 
     if solution is None:
         logger.debug(f"Couldn't find solution for grid:\n"

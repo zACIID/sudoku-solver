@@ -77,8 +77,8 @@ class SimulatedAnnealingSudokuGrid(SudokuGrid):
     def swap_two_cells_same_row(self) -> Tuple[CellCoordinates, CellCoordinates]:
         """
         Swaps two cells that belong to the same row.
-
-        :return: coordinates of the two swapped cells
+        :return: coordinates of the two swapped cells, which cannot refer
+            to cells that were already filled in teh starting grid
         """
 
         cell_1, cell_2 = self._get_random_row_neighbors()
@@ -121,7 +121,8 @@ class SimulatedAnnealingSudokuGrid(SudokuGrid):
 
     def get_score(self) -> float:
         """
-        Returns the score associated to the grid, also called `energy` in the simulated annealing context.
+        Returns the score associated to the grid, also called `energy`
+        in the simulated annealing context.
         :return: score (energy) of the current grid
         """
 
@@ -134,14 +135,12 @@ class SimulatedAnnealingSudokuGrid(SudokuGrid):
         tot_score = 0
         for i in range(0, 8+1):
             col_score = get_collection_score(self.get_column(i))
-
             tot_score += col_score
 
         for i in range(0, 2+1):
             for j in range(0, 2+1):
                 top_left_cell = CellCoordinates(row=i*3, col=j*3)
                 square_score = get_collection_score(self.get_square(top_left_cell))
-
                 tot_score += square_score
 
         return tot_score
