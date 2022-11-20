@@ -9,11 +9,7 @@ EMPTY_CELL = -777
 @pytest.fixture(
     ids=[
         "professor_sample",
-        "easy",
-
-        # TODO provare a parte
-        #"medium",
-        #"hard"
+        "easy"
     ],
     params=[
         # Prof. sample grid
